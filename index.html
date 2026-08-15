@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <header class="tabbar">
+    <div class="wordmark">DASHBOARD</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="today" role="tab" aria-selected="true">Today</button>
+      <button class="tab" data-tab="projects" role="tab" aria-selected="false">Projects</button>
+      <button class="tab" data-tab="personal" role="tab" aria-selected="false">Personal</button>
+      <button class="tab" data-tab="performance" role="tab" aria-selected="false">Performance</button>
+      <button class="tab" data-tab="career" role="tab" aria-selected="false">Career</button>
+      <button class="tab" data-tab="academics" role="tab" aria-selected="false">Academics</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============ TODAY (cover page) ============ -->
+    <section id="today" class="tab-panel active">
+
+      <!-- Stock ticker -->
+      <div class="ticker">
+        <div class="ticker-track" id="ticker-track">
+          <!-- duplicated in JS for seamless loop -->
+        </div>
+      </div>
+
+      <!-- Greeting + week score -->
+      <div class="greeting-row">
+        <div class="greeting">
+          <h1 id="greeting-text">Good afternoon, Oliver</h1>
+          <p class="meta-line" id="greeting-meta">Thursday, August 14</p>
+        </div>
+        <div class="week-score" id="week-score">
+          <div class="score-value" id="score-value">collecting — 0 of 7 days</div>
+          <div class="score-bars" id="score-bars">
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+            <span class="bar bar--pending"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick capture -->
+      <div class="capture-bar">
+        <input
+          id="capture-input"
+          type="text"
+          placeholder="Type anything — it'll get filed…"
+          autocomplete="off"
+        />
+        <span class="capture-hint" id="capture-hint"></span>
+      </div>
+
+      <!-- Calendar strip -->
+      <div class="calendar-strip">
+        <div class="cal-day">
+          <span class="cal-day-label">THU</span>
+          <span class="cal-day-count">3 events</span>
+        </div>
+        <div class="cal-events">
+          <div class="cal-event cal-event--class">
+            <span class="cal-event-time">09:00</span>
+            <span class="cal-event-title">RE Finance lecture</span>
+          </div>
+          <div class="cal-event cal-event--career">
+            <span class="cal-event-time">13:00</span>
+            <span class="cal-event-title">Recruiter call — Hines</span>
+          </div>
+          <div class="cal-event cal-event--deadline">
+            <span class="cal-event-time">23:59</span>
+            <span class="cal-event-title">Problem set due</span>
+          </div>
+        </div>
+        <div class="cal-free">free 10–13 · 16–23</div>
+      </div>
+
+      <!-- Daily check-in banner -->
+      <div class="checkin-banner" id="checkin-banner">
+        <div class="checkin-icon">✓</div>
+        <div class="checkin-copy">
+          <div class="checkin-title">Daily check-in</div>
+          <div class="checkin-meta">30 seconds · 0-day streak</div>
+        </div>
+        <button class="checkin-start" id="checkin-start">Start</button>
+      </div>
+
+      <!-- Pressing issues band -->
+      <div class="pressing-band pressing-band--empty" id="pressing-band">
+        <div class="pressing-header">Pressing — 0 items</div>
+        <div class="pressing-empty">Nothing pressing.</div>
+      </div>
+
+      <!-- News + To-do grid -->
+      <div class="grid-two">
+        <div class="news-digest">
+          <div class="panel-header">
+            <span>News</span>
+            <button class="refresh-icon" title="Refresh">⟳</button>
+          </div>
+          <div class="news-item">
+            <span class="news-tag news-tag--re">REAL ESTATE</span>
+            <p>Cap rates hold steady in Bay Area multifamily for a third straight quarter.</p>
+          </div>
+          <div class="news-item">
+            <span class="news-tag news-tag--ai">AI</span>
+            <p>Model context windows keep growing, changing how agentic coding tools plan work.</p>
+          </div>
+          <div class="news-item">
+            <span class="news-tag news-tag--markets">MARKETS</span>
+            <p>Treasury yields tick down after a softer-than-expected inflation print.</p>
+          </div>
+        </div>
+
+        <div class="todo-list">
+          <div class="panel-header">
+            <span>TO-DO · 0/0</span>
+            <button class="add-icon" title="Add">+</button>
+          </div>
+          <div class="todo-empty">No to-dos yet — type one into capture above.</div>
+        </div>
+      </div>
+
+      <!-- Yesterday row -->
+      <div class="yesterday-row" id="yesterday-row">
+        YESTERDAY&nbsp;&nbsp;&nbsp;slept --h&nbsp;&nbsp;&nbsp;mood -/5&nbsp;&nbsp;&nbsp;todos -/-&nbsp;&nbsp;&nbsp;applied -&nbsp;&nbsp;&nbsp;learning -&nbsp;&nbsp;&nbsp;exercise -
+      </div>
+
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section id="projects" class="tab-panel">
+      <div class="panel-header panel-header--tab">
+        <span>Projects</span>
+      </div>
+      <div class="kanban">
+        <div class="kanban-column">
+          <div class="kanban-column-header">Idea</div>
+          <div class="kanban-card">
+            <div class="kanban-card-title">Dashboard for tracking deal comps</div>
+          </div>
+        </div>
+        <div class="kanban-column">
+          <div class="kanban-column-header">Started</div>
+          <div class="kanban-card">
+            <div class="kanban-card-title">Personal dashboard</div>
+          </div>
+        </div>
+        <div class="kanban-column">
+          <div class="kanban-column-header">In Progress</div>
+        </div>
+        <div class="kanban-column">
+          <div class="kanban-column-header">Complete</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PERSONAL ============ -->
+    <section id="personal" class="tab-panel">
+      <div class="panel-header panel-header--tab">
+        <span>Personal</span>
+      </div>
+      <nav class="subtabs" role="tablist">
+        <button class="subtab active" data-subtab="finance" role="tab" aria-selected="true">Finance</button>
+        <button class="subtab" data-subtab="goals" role="tab" aria-selected="false">Goals</button>
+        <button class="subtab" data-subtab="learning" role="tab" aria-selected="false">Learning</button>
+      </nav>
+
+      <div id="finance" class="subtab-panel active">
+        <p class="placeholder-copy">Portfolio tracker + budget tracker land in Phase 6 — sensitive data, built last.</p>
+      </div>
+
+      <div id="goals" class="subtab-panel">
+        <div class="goals-tier">
+          <div class="goals-tier-header">Long-term</div>
+          <p class="placeholder-copy">Life goals go here.</p>
+        </div>
+        <div class="goals-tier">
+          <div class="goals-tier-header">Mid-term</div>
+          <p class="placeholder-copy">Quarterly / monthly objectives.</p>
+        </div>
+        <div class="goals-tier">
+          <div class="goals-tier-header">Short-term</div>
+          <p class="placeholder-copy">Weekly goals — feed daily to-dos.</p>
+        </div>
+      </div>
+
+      <div id="learning" class="subtab-panel">
+        <p class="placeholder-copy">Skill scheduler, content library, and notes / knowledge base land in Phase 4.</p>
+      </div>
+    </section>
+
+    <!-- ============ PERFORMANCE ============ -->
+    <section id="performance" class="tab-panel">
+      <div class="panel-header panel-header--tab">
+        <span>Performance</span>
+      </div>
+      <p class="placeholder-copy">Daily check-in, week score breakdown, and weekly synopsis land in Phase 3.</p>
+    </section>
+
+    <!-- ============ CAREER ============ -->
+    <section id="career" class="tab-panel">
+      <div class="panel-header panel-header--tab">
+        <span>Career</span>
+      </div>
+      <p class="placeholder-copy">Job tracker (Kanban) + networking module migrate in here in Phase 2.</p>
+    </section>
+
+    <!-- ============ ACADEMICS ============ -->
+    <section id="academics" class="tab-panel">
+      <div class="panel-header panel-header--tab">
+        <span>Academics</span>
+      </div>
+      <p class="placeholder-copy">Calendar view of assignments + grades via Canvas lands in Phase 2.</p>
+    </section>
+
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
