@@ -94,8 +94,7 @@ async function fetchTodos() {
 function renderTodos() {
   const rowsEl = document.getElementById("todo-rows");
   const countEl = document.getElementById("todo-count");
-  const completedCount = todos.filter((t) => t.completed).length;
-  countEl.textContent = `TO-DO · ${completedCount}/${todos.length}`;
+  countEl.textContent = `TO-DO · ${todos.length}`;
 
   if (todos.length === 0) {
     rowsEl.innerHTML = `<div class="todo-empty">No to-dos yet — type one into capture above.</div>`;
@@ -105,27 +104,24 @@ function renderTodos() {
   rowsEl.innerHTML = todos.map(todoRowHTML).join("");
 
   rowsEl.querySelectorAll(".todo-checkbox").forEach((el) => {
-    el.addEventListener("change", () => toggleTodo(Number(el.dataset.id), el.checked));
+    el.addEventListener("change", () => {
+      if (el.checked) completeTodo(Number(el.dataset.id), el);
+    });
   });
   rowsEl.querySelectorAll(".todo-defer").forEach((el) => {
     el.addEventListener("click", () => deferTodo(Number(el.dataset.id)));
   });
-  rowsEl.querySelectorAll(".todo-delete").forEach((el) => {
-    el.addEventListener("click", () => deleteTodo(Number(el.dataset.id)));
-  });
 }
 
 function todoRowHTML(todo) {
-  const rowClass = todo.completed ? "todo-row todo-row--completed" : "todo-row";
   const badge = todo.defer_count >= DEFER_STUCK_THRESHOLD ? `<span class="todo-badge">${todo.defer_count}×</span>` : "";
   return `
-    <div class="${rowClass}">
-      <input type="checkbox" class="todo-checkbox" data-id="${todo.id}" ${todo.completed ? "checked" : ""} />
+    <div class="todo-row" data-id="${todo.id}">
+      <input type="checkbox" class="todo-checkbox" data-id="${todo.id}" />
       <span class="todo-text">${escapeHtml(todo.text)}</span>
       ${badge}
       <span class="todo-actions">
         <button class="todo-defer" data-id="${todo.id}" title="Defer">›</button>
-        <button class="todo-delete" data-id="${todo.id}" title="Delete">×</button>
       </span>
     </div>
   `;
@@ -136,7 +132,7 @@ function renderPressingBand() {
   const header = document.getElementById("pressing-header");
   const items = document.getElementById("pressing-items");
 
-  const stuck = todos.filter((t) => !t.completed && t.defer_count >= DEFER_STUCK_THRESHOLD);
+  const stuck = todos.filter((t) => t.defer_count >= DEFER_STUCK_THRESHOLD);
 
   header.textContent = `Pressing — ${stuck.length} item${stuck.length === 1 ? "" : "s"}`;
 
@@ -168,16 +164,25 @@ async function addTodo(text) {
   await fetchTodos();
 }
 
-async function toggleTodo(id, completed) {
-  const { error } = await supabaseClient
-    .from("todos")
-    .update({ completed, completed_at: completed ? new Date().toISOString() : null })
-    .eq("id", id);
-  if (error) {
-    console.error("Failed to update to-do:", error.message);
-    return;
-  }
-  await fetchTodos();
+const TODO_POP_DURATION_MS = 260;
+
+// Checking a task off both completes it (so Performance can later read
+// completions) and clears it from the list, with a pop animation first.
+function completeTodo(id, checkboxEl) {
+  const row = checkboxEl.closest(".todo-row");
+  row.classList.add("todo-row--popping");
+
+  setTimeout(async () => {
+    const { error } = await supabaseClient
+      .from("todos")
+      .update({ completed: true, completed_at: new Date().toISOString(), deleted_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      console.error("Failed to complete to-do:", error.message);
+      return;
+    }
+    await fetchTodos();
+  }, TODO_POP_DURATION_MS);
 }
 
 async function deferTodo(id) {
@@ -189,18 +194,6 @@ async function deferTodo(id) {
     .eq("id", id);
   if (error) {
     console.error("Failed to defer to-do:", error.message);
-    return;
-  }
-  await fetchTodos();
-}
-
-async function deleteTodo(id) {
-  const { error } = await supabaseClient
-    .from("todos")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
-  if (error) {
-    console.error("Failed to delete to-do:", error.message);
     return;
   }
   await fetchTodos();
