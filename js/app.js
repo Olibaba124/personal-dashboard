@@ -75,11 +75,10 @@ function escapeHtml(str) {
 
 async function fetchTodos() {
   const rowsEl = document.getElementById("todo-rows");
-  const { data, error } = await supabaseClient
-    .from("todos")
-    .select("*")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+  // No deleted_at filter here — goal progress on short-term goals needs to count
+  // completed (soft-deleted) to-dos too, not just open ones. Display-time filtering
+  // happens in renderTodos() / renderTodoRowsInto() instead.
+  const { data, error } = await supabaseClient.from("todos").select("*").order("created_at", { ascending: true });
 
   if (error) {
     rowsEl.innerHTML = `<div class="todo-empty">Couldn't load to-dos — ${escapeHtml(error.message)}</div>`;
@@ -89,28 +88,35 @@ async function fetchTodos() {
   todos = data;
   renderTodos();
   renderPressingBand();
+  if (typeof renderGoals === "function") renderGoals();
+}
+
+// Shared row renderer — used by the cover-page to-do list AND a goal's "this week"
+// section, so both stay wired identically instead of forking the component.
+function renderTodoRowsInto(containerEl, todoList, emptyMessage) {
+  if (todoList.length === 0) {
+    containerEl.innerHTML = `<div class="todo-empty">${emptyMessage}</div>`;
+    return;
+  }
+
+  containerEl.innerHTML = todoList.map(todoRowHTML).join("");
+
+  containerEl.querySelectorAll(".todo-checkbox").forEach((el) => {
+    el.addEventListener("change", () => {
+      if (el.checked) completeTodo(Number(el.dataset.id), el);
+    });
+  });
+  containerEl.querySelectorAll(".todo-defer").forEach((el) => {
+    el.addEventListener("click", () => deferTodo(Number(el.dataset.id)));
+  });
 }
 
 function renderTodos() {
   const rowsEl = document.getElementById("todo-rows");
   const countEl = document.getElementById("todo-count");
-  countEl.textContent = `TO-DO · ${todos.length}`;
-
-  if (todos.length === 0) {
-    rowsEl.innerHTML = `<div class="todo-empty">No to-dos yet — type one into capture above.</div>`;
-    return;
-  }
-
-  rowsEl.innerHTML = todos.map(todoRowHTML).join("");
-
-  rowsEl.querySelectorAll(".todo-checkbox").forEach((el) => {
-    el.addEventListener("change", () => {
-      if (el.checked) completeTodo(Number(el.dataset.id), el);
-    });
-  });
-  rowsEl.querySelectorAll(".todo-defer").forEach((el) => {
-    el.addEventListener("click", () => deferTodo(Number(el.dataset.id)));
-  });
+  const openTodos = todos.filter((t) => t.deleted_at === null);
+  countEl.textContent = `TO-DO · ${openTodos.length}`;
+  renderTodoRowsInto(rowsEl, openTodos, "No to-dos yet — type one into capture above.");
 }
 
 function todoRowHTML(todo) {
@@ -132,27 +138,38 @@ function renderPressingBand() {
   const header = document.getElementById("pressing-header");
   const items = document.getElementById("pressing-items");
 
-  const stuck = todos.filter((t) => t.defer_count >= DEFER_STUCK_THRESHOLD);
+  const stuckTodos = todos.filter((t) => t.deleted_at === null && t.defer_count >= DEFER_STUCK_THRESHOLD);
+  const stalledGoals = typeof goals !== "undefined" ? goals.filter(isStalled) : [];
+  const total = stuckTodos.length + stalledGoals.length;
 
-  header.textContent = `Pressing — ${stuck.length} item${stuck.length === 1 ? "" : "s"}`;
+  header.textContent = `Pressing — ${total} item${total === 1 ? "" : "s"}`;
 
-  if (stuck.length === 0) {
+  if (total === 0) {
     band.classList.add("pressing-band--empty");
     items.innerHTML = `<div class="pressing-empty">Nothing pressing.</div>`;
     return;
   }
 
   band.classList.remove("pressing-band--empty");
-  items.innerHTML = stuck
-    .map(
-      (t) => `
+
+  const todoRows = stuckTodos.map(
+    (t) => `
       <div class="pressing-row">
         <span>${escapeHtml(t.text)}</span>
         <span class="pressing-row-reason">deferred ${t.defer_count}×</span>
       </div>
     `
-    )
-    .join("");
+  );
+  const goalRows = stalledGoals.map(
+    (g) => `
+      <div class="pressing-row">
+        <span>${escapeHtml(g.title)}</span>
+        <span class="pressing-row-reason">stalled ${stalledDays(g)}d</span>
+      </div>
+    `
+  );
+
+  items.innerHTML = todoRows.concat(goalRows).join("");
 }
 
 async function addTodo(text) {
@@ -169,6 +186,7 @@ const TODO_POP_DURATION_MS = 260;
 // Checking a task off both completes it (so Performance can later read
 // completions) and clears it from the list, with a pop animation first.
 function completeTodo(id, checkboxEl) {
+  const todo = todos.find((t) => t.id === id);
   const row = checkboxEl.closest(".todo-row");
   row.classList.add("todo-row--popping");
 
@@ -180,6 +198,9 @@ function completeTodo(id, checkboxEl) {
     if (error) {
       console.error("Failed to complete to-do:", error.message);
       return;
+    }
+    if (todo && todo.goal_id) {
+      await bumpMovement(todo.goal_id);
     }
     await fetchTodos();
   }, TODO_POP_DURATION_MS);
@@ -199,16 +220,17 @@ async function deferTodo(id) {
   await fetchTodos();
 }
 
-// ============ Goals (Long-term / Mid-term / Short-term) ============
+// ============ Goals (containers: long -> mid -> short -> linked to-dos) ============
 const GOAL_TIERS = ["long_term", "mid_term", "short_term"];
+// Each tier's children are automatically the next tier down; short-term's "children"
+// are linked to-dos instead, so it has no further goal tier below it.
+const NEXT_GOAL_TIER = { long_term: "mid_term", mid_term: "short_term" };
+const STALLED_DAYS = 21;
 let goals = [];
+const expandedGoalIds = new Set();
 
 async function fetchGoals() {
-  const { data, error } = await supabaseClient
-    .from("goals")
-    .select("*")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+  const { data, error } = await supabaseClient.from("goals").select("*").order("created_at", { ascending: true });
 
   if (error) {
     GOAL_TIERS.forEach((tier) => {
@@ -220,39 +242,300 @@ async function fetchGoals() {
 
   goals = data;
   renderGoals();
+  renderPressingBand();
 }
+
+// ---- Derived values: computed on every render, never stored ----
+
+function goalChildren(goalId) {
+  return goals.filter((g) => g.parent_id === goalId);
+}
+
+function goalLinkedTodos(goalId) {
+  return todos.filter((t) => t.goal_id === goalId);
+}
+
+// Progress = completed direct children / total direct children (long/mid), or
+// completed / total linked to-dos, counting every to-do ever linked, not just open
+// ones (short). No children at all -> null, rendered as "not broken down yet".
+function goalProgress(goal) {
+  if (goal.tier === "short_term") {
+    const linked = goalLinkedTodos(goal.id);
+    if (linked.length === 0) return null;
+    const done = linked.filter((t) => t.completed).length;
+    return { done, total: linked.length, fraction: done / linked.length };
+  }
+
+  const children = goalChildren(goal.id);
+  if (children.length === 0) return null;
+  const done = children.filter((c) => c.status === "done").length;
+  return { done, total: children.length, fraction: done / children.length };
+}
+
+function isStalled(goal) {
+  return goal.status === "active" && stalledDays(goal) >= STALLED_DAYS;
+}
+
+function stalledDays(goal) {
+  const lastMs = new Date(goal.last_movement_at).getTime();
+  return Math.floor((Date.now() - lastMs) / (1000 * 60 * 60 * 24));
+}
+
+function formatMonthShort(dateStr) {
+  if (!dateStr) return null;
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+}
+
+// Pace compares completed-milestone count against elapsed share of the span from
+// created_at to the furthest child target_month. No target months anywhere -> null,
+// omit pace entirely rather than guessing.
+function goalPace(goal) {
+  const targets = goalChildren(goal.id)
+    .map((c) => c.target_month)
+    .filter(Boolean);
+  if (targets.length === 0) return null;
+
+  const furthest = targets.reduce((a, b) => (new Date(a) > new Date(b) ? a : b));
+  const created = new Date(goal.created_at);
+  const spanMs = new Date(furthest) - created;
+  if (spanMs <= 0) return null;
+
+  const spanWeeks = spanMs / (1000 * 60 * 60 * 24 * 7);
+  const elapsedWeeks = (Date.now() - created) / (1000 * 60 * 60 * 24 * 7);
+  const expectedFraction = elapsedWeeks / spanWeeks;
+
+  const progress = goalProgress(goal);
+  const actualFraction = progress ? progress.fraction : 0;
+  const deltaWeeks = (actualFraction - expectedFraction) * spanWeeks;
+
+  if (Math.abs(deltaWeeks) < 0.5) return "on pace";
+  const rounded = Math.round(Math.abs(deltaWeeks));
+  return deltaWeeks > 0 ? `${rounded} wks ahead` : `${rounded} wks behind`;
+}
+
+function milestoneColorClass(child) {
+  if (child.status === "dropped") return "milestone-block--dropped";
+  if (child.status === "done") return "milestone-block--done";
+  const progress = goalProgress(child);
+  if (progress && progress.fraction > 0) return "milestone-block--progress";
+  return "milestone-block--not-started";
+}
+
+// Never renders "overdue" or turns red — a missed target month just reads "was Oct".
+function milestoneMetaLine(child) {
+  if (child.status === "done") {
+    const monthSrc = child.completed_at || child.target_month;
+    return monthSrc ? `done · ${formatMonthShort(monthSrc)}` : "done";
+  }
+
+  const progress = goalProgress(child);
+  if (progress) {
+    return `${progress.done} of ${progress.total} · now`;
+  }
+
+  if (child.target_month) {
+    const target = new Date(`${child.target_month}T00:00:00`);
+    const now = new Date();
+    const isPast = target < new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthLabel = formatMonthShort(child.target_month);
+    return isPast ? `was ${monthLabel}` : monthLabel;
+  }
+
+  return "";
+}
+
+function getAncestorChain(goalId) {
+  const chain = [goalId];
+  let current = goals.find((g) => g.id === goalId);
+  while (current && current.parent_id) {
+    chain.push(current.parent_id);
+    current = goals.find((g) => g.id === current.parent_id);
+  }
+  return chain;
+}
+
+async function bumpMovement(goalId) {
+  const ids = getAncestorChain(goalId);
+  const { error } = await supabaseClient
+    .from("goals")
+    .update({ last_movement_at: new Date().toISOString() })
+    .in("id", ids);
+  if (error) {
+    console.error("Failed to bump goal movement:", error.message);
+  }
+}
+
+// ---- Rendering ----
 
 function renderGoals() {
   GOAL_TIERS.forEach((tier) => {
     const rowsEl = document.getElementById(`goals-rows-${tier}`);
-    const tierGoals = goals.filter((g) => g.tier === tier);
+    const tierGoals = goals.filter((g) => g.tier === tier && g.status === "active");
 
     if (tierGoals.length === 0) {
       rowsEl.innerHTML = `<div class="goals-empty">No goals yet.</div>`;
       return;
     }
 
-    rowsEl.innerHTML = tierGoals.map(goalRowHTML).join("");
-
-    rowsEl.querySelectorAll(".goal-checkbox").forEach((el) => {
-      el.addEventListener("change", () => {
-        if (el.checked) completeGoal(Number(el.dataset.id), el);
-      });
-    });
+    rowsEl.innerHTML = tierGoals.map(goalListRowHTML).join("");
   });
+
+  wireGoalListeners();
 }
 
-function goalRowHTML(goal) {
+function goalListRowHTML(goal) {
+  const progress = goalProgress(goal);
+  const stalled = isStalled(goal);
+  const expanded = expandedGoalIds.has(goal.id);
+  const barWidth = progress ? Math.round(progress.fraction * 100) : 0;
+  const barFillClass = progress ? "goal-progress-bar-fill" : "goal-progress-bar-fill goal-progress-bar-fill--empty";
+
+  let rightBlock;
+  if (stalled) {
+    rightBlock = `
+      <div class="goal-right-block goal-right-block--stalled">
+        <div class="goal-right-pct">${barWidth}%</div>
+        <div class="goal-right-sub">stalled ${stalledDays(goal)}d</div>
+      </div>
+    `;
+  } else if (progress) {
+    rightBlock = `
+      <div class="goal-right-block">
+        <div class="goal-right-pct">${barWidth}%</div>
+        <div class="goal-right-sub">${progress.done} of ${progress.total}</div>
+      </div>
+    `;
+  } else {
+    rightBlock = `
+      <div class="goal-right-block">
+        <div class="goal-right-sub goal-right-sub--muted">not broken down yet</div>
+      </div>
+    `;
+  }
+
   return `
-    <div class="goal-row" data-id="${goal.id}">
-      <input type="checkbox" class="goal-checkbox" data-id="${goal.id}" />
-      <span class="goal-text">${escapeHtml(goal.text)}</span>
+    <div class="goal-list-row ${expanded ? "goal-list-row--expanded" : ""}" data-id="${goal.id}">
+      <div class="goal-list-row-header" data-id="${goal.id}">
+        <span class="goal-list-chevron">›</span>
+        <div class="goal-list-main">
+          <div class="goal-list-title">${escapeHtml(goal.title)}</div>
+          <div class="goal-progress-bar"><div class="${barFillClass}" style="width:${barWidth}%"></div></div>
+        </div>
+        ${rightBlock}
+      </div>
+      <div class="goal-list-row-body">
+        ${goalDetailHTML(goal)}
+      </div>
     </div>
   `;
 }
 
-async function addGoal(tier, text) {
-  const { error } = await supabaseClient.from("goals").insert({ tier, text });
+function goalDetailHTML(goal) {
+  return goal.tier === "short_term" ? goalDetailShortTermHTML(goal) : goalDetailContainerHTML(goal);
+}
+
+function goalDetailContainerHTML(goal) {
+  const children = goalChildren(goal.id);
+  const milestonesHTML =
+    children.length === 0
+      ? `<p class="goals-empty">Not broken down yet — add a milestone below.</p>`
+      : `<div class="milestone-grid">${children.map(milestoneBlockHTML).join("")}</div>`;
+
+  return `
+    <div class="goal-detail-section">
+      <div class="goal-detail-label">Milestones</div>
+      ${milestonesHTML}
+      <div class="goal-add-milestone">
+        <input type="text" class="goal-milestone-input" data-parent-id="${goal.id}" placeholder="Add a milestone…" />
+        <input type="month" class="goal-milestone-month" data-parent-id="${goal.id}" />
+      </div>
+    </div>
+    ${goalFooterHTML(goal)}
+  `;
+}
+
+function milestoneBlockHTML(child) {
+  return `
+    <div class="milestone-block ${milestoneColorClass(child)}">
+      <div class="milestone-block-title">${escapeHtml(child.title)}</div>
+      <div class="milestone-block-meta">${milestoneMetaLine(child)}</div>
+    </div>
+  `;
+}
+
+function goalDetailShortTermHTML(goal) {
+  return `
+    <div class="goal-detail-section">
+      <div class="goal-detail-label">This week</div>
+      <div class="goal-thisweek-rows" data-goal-id="${goal.id}"></div>
+      <button class="goal-pull-button" data-id="${goal.id}">Pull into this week</button>
+    </div>
+    ${goalFooterHTML(goal)}
+  `;
+}
+
+function goalFooterHTML(goal) {
+  const pace = goalPace(goal);
+  const parts = [];
+  if (pace) parts.push(pace);
+  parts.push(`moved ${stalledDays(goal)}d ago`);
+
+  return `
+    <div class="goal-footer">
+      <span class="goal-footer-meta">${parts.join(" · ")}</span>
+      <select class="goal-status-select" data-id="${goal.id}">
+        <option value="active" ${goal.status === "active" ? "selected" : ""}>Active</option>
+        <option value="done" ${goal.status === "done" ? "selected" : ""}>Done</option>
+        <option value="dropped" ${goal.status === "dropped" ? "selected" : ""}>Dropped</option>
+      </select>
+    </div>
+  `;
+}
+
+function wireGoalListeners() {
+  document.querySelectorAll(".goal-list-row-header").forEach((el) => {
+    el.addEventListener("click", () => toggleGoalExpand(Number(el.dataset.id)));
+  });
+  document.querySelectorAll(".goal-milestone-input").forEach((el) => {
+    el.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const title = el.value.trim();
+      if (!title) return;
+
+      const monthInput = document.querySelector(`.goal-milestone-month[data-parent-id="${el.dataset.parentId}"]`);
+      const targetMonth = monthInput && monthInput.value ? `${monthInput.value}-01` : null;
+
+      el.value = "";
+      if (monthInput) monthInput.value = "";
+      await addMilestone(Number(el.dataset.parentId), title, targetMonth);
+    });
+  });
+  document.querySelectorAll(".goal-pull-button").forEach((el) => {
+    el.addEventListener("click", () => pullIntoThisWeek(Number(el.dataset.id)));
+  });
+  document.querySelectorAll(".goal-status-select").forEach((el) => {
+    el.addEventListener("change", () => updateGoalStatus(Number(el.dataset.id), el.value));
+  });
+  document.querySelectorAll(".goal-thisweek-rows").forEach((el) => {
+    const goalId = Number(el.dataset.goalId);
+    const linked = goalLinkedTodos(goalId).filter((t) => t.deleted_at === null);
+    renderTodoRowsInto(el, linked, "No to-dos linked yet.");
+  });
+}
+
+function toggleGoalExpand(id) {
+  if (expandedGoalIds.has(id)) {
+    expandedGoalIds.delete(id);
+  } else {
+    expandedGoalIds.add(id);
+  }
+  renderGoals();
+}
+
+// ---- Writes ----
+
+async function addGoal(tier, title) {
+  const { error } = await supabaseClient.from("goals").insert({ tier, title, parent_id: null });
   if (error) {
     console.error("Failed to add goal:", error.message);
     return;
@@ -260,32 +543,61 @@ async function addGoal(tier, text) {
   await fetchGoals();
 }
 
-function completeGoal(id, checkboxEl) {
-  const row = checkboxEl.closest(".goal-row");
-  row.classList.add("goal-row--popping");
+async function addMilestone(parentId, title, targetMonth) {
+  const parent = goals.find((g) => g.id === parentId);
+  if (!parent || !NEXT_GOAL_TIER[parent.tier]) return;
 
-  setTimeout(async () => {
-    const { error } = await supabaseClient
-      .from("goals")
-      .update({ completed: true, completed_at: new Date().toISOString(), deleted_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) {
-      console.error("Failed to complete goal:", error.message);
-      return;
-    }
-    await fetchGoals();
-  }, TODO_POP_DURATION_MS);
+  const { error } = await supabaseClient.from("goals").insert({
+    tier: NEXT_GOAL_TIER[parent.tier],
+    title,
+    parent_id: parentId,
+    target_month: targetMonth,
+  });
+  if (error) {
+    console.error("Failed to add milestone:", error.message);
+    return;
+  }
+  await bumpMovement(parentId);
+  await fetchGoals();
+}
+
+async function updateGoalStatus(id, status) {
+  const patch = { status };
+  if (status === "done") {
+    patch.completed_at = new Date().toISOString();
+  }
+  const { error } = await supabaseClient.from("goals").update(patch).eq("id", id);
+  if (error) {
+    console.error("Failed to update goal status:", error.message);
+    return;
+  }
+  await bumpMovement(id);
+  await fetchGoals();
+}
+
+// The only new write path into the to-do list this session — creates a to-do
+// pre-linked to a short-term goal via goal_id.
+async function pullIntoThisWeek(goalId) {
+  const goal = goals.find((g) => g.id === goalId);
+  if (!goal) return;
+
+  const { error } = await supabaseClient.from("todos").insert({ text: goal.title, goal_id: goalId });
+  if (error) {
+    console.error("Failed to pull into this week:", error.message);
+    return;
+  }
+  await fetchTodos();
 }
 
 function initGoalsTab() {
   document.querySelectorAll(".goals-input").forEach((input) => {
     input.addEventListener("keydown", async (event) => {
       if (event.key !== "Enter") return;
-      const text = input.value.trim();
-      if (!text) return;
+      const title = input.value.trim();
+      if (!title) return;
 
       input.value = "";
-      await addGoal(input.dataset.tier, text);
+      await addGoal(input.dataset.tier, title);
       input.focus();
     });
   });
@@ -519,6 +831,7 @@ function initCapture() {
 window.initDashboard = function initDashboard() {
   initTabs(".tab", "tab-panel", "data-tab");
   initTabs(".subtab", "subtab-panel", "data-subtab");
+  initTabs(".goals-subtab", "goals-subtab-panel", "data-goals-subtab");
   renderTicker();
   renderGreeting();
   initCapture();

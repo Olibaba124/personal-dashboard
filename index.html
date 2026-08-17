@@ -209,26 +209,36 @@
       </div>
 
       <div id="goals" class="subtab-panel">
-        <div class="goals-tier">
-          <div class="goals-tier-header">Long-term</div>
+        <nav class="subtabs subtabs--nested" role="tablist">
+          <button class="goals-subtab active" data-goals-subtab="goals-tier-long_term" role="tab" aria-selected="true">Long-term</button>
+          <button class="goals-subtab" data-goals-subtab="goals-tier-mid_term" role="tab" aria-selected="false">Mid-term</button>
+          <button class="goals-subtab" data-goals-subtab="goals-tier-short_term" role="tab" aria-selected="false">Short-term</button>
+          <button class="goals-subtab goals-subtab--disabled" data-goals-subtab="goals-tier-roadmap" role="tab" aria-selected="false">Roadmap</button>
+        </nav>
+
+        <div id="goals-tier-long_term" class="goals-subtab-panel active">
           <div class="goals-add-bar">
             <input type="text" class="goals-input" data-tier="long_term" placeholder="Add a long-term goal…" />
           </div>
           <div class="goals-rows" id="goals-rows-long_term"></div>
         </div>
-        <div class="goals-tier">
-          <div class="goals-tier-header">Mid-term</div>
+
+        <div id="goals-tier-mid_term" class="goals-subtab-panel">
           <div class="goals-add-bar">
             <input type="text" class="goals-input" data-tier="mid_term" placeholder="Add a mid-term goal…" />
           </div>
           <div class="goals-rows" id="goals-rows-mid_term"></div>
         </div>
-        <div class="goals-tier">
-          <div class="goals-tier-header">Short-term</div>
+
+        <div id="goals-tier-short_term" class="goals-subtab-panel">
           <div class="goals-add-bar">
             <input type="text" class="goals-input" data-tier="short_term" placeholder="Add a short-term goal…" />
           </div>
           <div class="goals-rows" id="goals-rows-short_term"></div>
+        </div>
+
+        <div id="goals-tier-roadmap" class="goals-subtab-panel">
+          <p class="placeholder-copy">Roadmap (timeline) view — coming soon.</p>
         </div>
       </div>
 

@@ -716,22 +716,45 @@ main {
 .subtab-panel { display: none; }
 .subtab-panel.active { display: block; }
 
-.goals-tier {
-  padding: 12px 0;
-  border-top: 0.5px solid var(--border);
+/* ============ Goals: nested sub-tabs (Long/Mid/Short/Roadmap) ============ */
+.subtabs--nested {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  border-bottom: 0.5px solid var(--border);
 }
 
-.goals-tier:first-of-type { border-top: none; }
-
-.goals-tier-header {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+.goals-subtab {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 8px 4px;
+  margin-right: 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
 }
 
+.goals-subtab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-text-strong);
+}
+
+.goals-subtab--disabled {
+  color: var(--text-disabled);
+}
+
+.goals-subtab--disabled.active {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border);
+}
+
+.goals-subtab-panel { display: none; }
+.goals-subtab-panel.active { display: block; }
+
+/* ============ Goals: add bar (top-level, per tier) ============ */
 .goals-add-bar {
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 .goals-input {
@@ -754,39 +777,229 @@ main {
   color: var(--text-disabled);
 }
 
-.goal-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-top: 0.5px solid var(--border);
-  transform-origin: center left;
-}
-
-.goal-row:first-child { border-top: none; }
-
-.goal-row--popping {
-  animation: todo-pop 260ms ease-out forwards;
-  pointer-events: none;
-}
-
-.goal-checkbox {
-  accent-color: var(--success-fill);
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-}
-
-.goal-text {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-body);
-}
-
 .goals-empty {
   color: var(--text-disabled);
   font-size: 13px;
   padding: 8px 0;
+}
+
+/* ============ Goals: list row ============ */
+.goal-list-row {
+  border-top: 0.5px solid var(--border);
+}
+
+.goal-list-row:first-child { border-top: none; }
+
+.goal-list-row-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.goal-list-chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+.goal-list-row--expanded .goal-list-chevron {
+  transform: rotate(90deg);
+}
+
+.goal-list-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-list-title {
+  font-size: 14px;
+  color: var(--text-body);
+  margin-bottom: 6px;
+}
+
+.goal-progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.goal-progress-bar-fill {
+  height: 100%;
+  background: var(--accent-text-strong);
+}
+
+.goal-progress-bar-fill--empty {
+  background: transparent;
+}
+
+.goal-right-block {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 76px;
+}
+
+.goal-right-pct {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.goal-right-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.goal-right-sub--muted {
+  color: var(--text-disabled);
+}
+
+.goal-right-block--stalled .goal-right-pct,
+.goal-right-block--stalled .goal-right-sub {
+  color: var(--warning-text);
+}
+
+/* ============ Goals: expanded detail ============ */
+.goal-list-row-body {
+  display: none;
+  padding: 4px 0 14px 20px;
+}
+
+.goal-list-row--expanded .goal-list-row-body {
+  display: block;
+}
+
+.goal-detail-section {
+  margin-bottom: 12px;
+}
+
+.goal-detail-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* ============ Goals: milestone grid ============ */
+.milestone-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.milestone-block {
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+  padding: 6px 10px;
+  background: var(--surface);
+}
+
+.milestone-block-title {
+  font-size: 12px;
+  color: var(--text-body);
+  margin-bottom: 3px;
+}
+
+.milestone-block-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.milestone-block--done { border-left-color: var(--success-fill); }
+.milestone-block--progress { border-left-color: var(--accent-text-strong); }
+.milestone-block--not-started { border-left-color: var(--border); }
+
+.milestone-block--dropped {
+  border-left-color: var(--border);
+}
+
+.milestone-block--dropped .milestone-block-title {
+  color: var(--text-disabled);
+  text-decoration: line-through;
+}
+
+.goal-add-milestone {
+  display: flex;
+  gap: 6px;
+}
+
+.goal-milestone-input {
+  flex: 1;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  outline: none;
+}
+
+.goal-milestone-input::placeholder {
+  color: var(--text-disabled);
+}
+
+.goal-milestone-month {
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+
+/* ============ Goals: this week (short-term) ============ */
+.goal-thisweek-rows {
+  margin-bottom: 8px;
+}
+
+.goal-pull-button {
+  background: transparent;
+  border: 0.5px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.goal-pull-button:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-text-strong);
+}
+
+/* ============ Goals: footer ============ */
+.goal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--border);
+}
+
+.goal-footer-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.goal-status-select {
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  padding: 3px 4px;
 }
 
 /* ============ Utility ============ */
@@ -880,6 +1093,7 @@ main {
 @media (max-width: 720px) {
   .grid-two { grid-template-columns: 1fr; }
   .kanban { grid-template-columns: repeat(2, 1fr); }
+  .milestone-grid { grid-template-columns: repeat(2, 1fr); }
   .greeting-row { flex-direction: column; align-items: flex-start; gap: 12px; }
   .week-score { text-align: left; }
   .score-bars { justify-content: flex-start; }
