@@ -104,8 +104,12 @@ Three sub-tabs: **Finance, Goals, Learning.** *(Fitness was removed — it's fol
   - *Live portfolio tracker* — pulls positions via a brokerage API; daily P&L, position values, allocation. Keys live server-side in Supabase.
   - *Budget tracker* — connects to my bank via **Plaid** (bank credentials never touch my site); auto-pulls and categorizes transactions, shows weekly/monthly spend against a budget I set. Later: an insights layer that flags where I overspend.
   - *This is the hardest tab (sensitive data + external APIs) — build it last.*
-- **Goals** — a mix of scales with **separate subsections** for each:
-  - Long-term life goals → mid-term quarterly/monthly objectives → short-term weekly goals that feed my daily to-dos. A cascade: big goals break into medium, medium into small. Ties into Performance and the to-do list so I can see whether daily actions ladder up.
+- **Goals** — **containers, not lines of text.** Each goal holds the tier below it: a long-term goal holds mid-term milestones, a mid-term milestone holds short-term weekly actions, and a short-term goal holds the to-dos it's linked to. Sub-tabs stay Long-term / Mid-term / Short-term (plus a stubbed Roadmap timeline view for later).
+  - **Progress is always derived, never typed in.** It's completed direct children over total direct children (or completed linked to-dos, for a short-term goal). A goal with nothing under it yet reads "not broken down yet" — never a fabricated 0%.
+  - **Milestones carry a soft target month, not a hard deadline.** It's informational only — a missed month just reads "was Oct," never red, never "overdue." The point is honest information, not a manufactured deadline.
+  - A short-term goal may optionally attach to a milestone, but an unattached one is just as valid and displays normally — no "orphan" treatment.
+  - Marking a goal done or dropped is a manual decision (a status control), separate from progress — hitting 100% doesn't auto-complete anything.
+  - **Goals deliberately do not feed the week score** — same reasoning as sleep and mood: they're something to reflect on, not something to be graded on daily.
 - **Learning** — three things in one:
   - *Skill scheduler* — I seed topics/skills I want to grow; an LLM breaks them into bite-sized daily suggestions and sequences them into a schedule. Completing daily learning auto-pulls into Performance.
   - *Content library* — I drop in articles, PDFs, links, podcasts; the LLM digests them (summary + key takeaways) and slots them into the daily schedule ("here's a 10-minute read for today").

@@ -99,6 +99,23 @@ Phase 1: build the Projects tab as a Kanban board — columns Idea → Started �
 Each project card should be expandable to hold subtasks (manual for now; LLM-suggested subtasks come later). Test at the end, update ROADMAP.md.
 ```
 
+### Session 6b — Goals retool (containers + derived progress)
+```
+Retooled the Goals tab from Session 5's flat three-list version into a self-referencing
+container hierarchy: long-term goals hold mid-term milestones, mid-term milestones hold
+short-term ones, short-term goals hold linked to-dos (new todos.goal_id). Progress is always
+computed from children, never a stored/typed field. Milestones carry a soft, non-punitive
+target month — a missed one reads "was Oct," never red, never "overdue." Marking a goal
+done/dropped is a manual status control, kept separate from the derived progress bar.
+Completing a linked to-do or changing a goal's status bumps last_movement_at up the whole
+parent chain; the pressing band now flags goals stalled 21+ days alongside 3×-deferred to-dos.
+Added a disabled-but-clickable Roadmap sub-tab stub for the timeline view (Phase 3, not built
+yet). Full component spec: DESIGN.md §6. Two schema ambiguities in the original retool spec
+were resolved with the user before building (see ROADMAP.md's Phase 1 session note) — worth
+rereading before touching goals.js code, since the resolved decisions (tier value strings,
+no user_id column) aren't obvious from the code alone.
+```
+
 ---
 
 ## Phase 3 — Performance (cover-page pieces)
@@ -114,6 +131,25 @@ Phase 3: wire up the three cover-page elements that depend on check-in data. Do 
 3. Yesterday row. One monospace line: slept / mood / todos / applied / learning / exercise. Facts only, no encouragement or narrative.
 
 Test at the end, update ROADMAP.md.
+```
+
+### Session 8 — Goals Roadmap view (timeline)
+```
+Read CLAUDE.md, ROADMAP.md and DESIGN.md first — DESIGN.md §6 has the full Goals component
+spec, including the "no red on missed target months" rule this view has to respect too.
+
+Phase 3: build the Roadmap (timeline) view that's been stubbed on the Goals tab's fourth
+sub-tab since the container retool (currently just a "coming soon" placeholder).
+
+Show milestones (goals with a target_month) plotted along a timeline. Reuse the existing
+soft-target-month philosophy exactly — a missed month is neutral, never red, never "overdue."
+Pull data from the same goals table the list/detail views already use; no new schema should be
+needed unless something concrete comes up building this.
+
+The Cascade (tree) view is a separate, later piece — don't build it this session unless it
+turns out to be trivial once the Roadmap view exists.
+
+Small steps, test as you go, update ROADMAP.md when done.
 ```
 
 ---

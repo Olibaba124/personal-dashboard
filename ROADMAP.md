@@ -62,15 +62,32 @@
 > when Career migrates the job tracker in Phase 2. Cards expand in place (no modal) to reveal subtasks.
 > LLM-suggested subtasks are explicitly future work, not built yet.
 >
-> **Phase 1 complete.** Tested with four jsdom suites (102 checks total, no browser tool in this
-> environment) — real-browser confirmation from the user pending for Goals and Projects specifically
-> (to-do list already confirmed working live). Next: Phase 2 — migrate the job tracker into Career,
-> add the Academics Canvas integration, and the cover-page calendar strip.
+> **Phase 1 initially complete 2026-08-16.** Tested with four jsdom suites (102 checks, no browser
+> tool in this environment) — real-browser confirmation from the user pending for Goals and Projects
+> specifically (to-do list already confirmed working live).
+>
+> **Goals retooled into a container hierarchy (2026-08-17)**, replacing the flat three-list version
+> above. Long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term
+> goals hold linked to-dos (`todos.goal_id`, nullable FK). Progress is always derived from
+> children/linked to-dos — never a stored percentage. Milestones carry a soft `target_month` (never
+> renders "overdue," a missed one just reads "was Oct"). Marking a goal done/dropped is a manual
+> status control, separate from derived progress. `last_movement_at` propagates up the parent chain
+> when a linked to-do completes or a goal's status changes; the pressing band now also flags goals
+> stalled 21+ days. A disabled-but-clickable Roadmap sub-tab is stubbed (timeline view, not built).
+> Migration kept the existing `long_term`/`mid_term`/`short_term` tier values and skipped a `user_id`
+> column — both confirmed with the user first, since the retool spec's own schema draft disagreed
+> with itself and with the rest of the codebase's RLS-to-authenticated-only pattern on those two
+> points. Tested with a rewritten Goals jsdom suite (39 checks: full add-milestone-pull-complete flow,
+> three-level movement propagation, manual status control, pressing-band merge) plus the three
+> existing suites re-verified (128 checks total). Full component spec: `DESIGN.md` §6.
+>
+> **Phase 1 complete.** Next: Phase 2 — migrate the job tracker into Career, add the Academics Canvas
+> integration, and the cover-page calendar strip.
 
 - [x] **To-do list** on the cover page (add / complete / defer / delete; track defers so a 3+ pushed task flags as "stuck"). *(2026-08-16)*
-- [x] **Goals** tab — tiered with separate subsections: long-term → mid-term (quarterly/monthly) → short-term (weekly, feeds daily to-dos). *(2026-08-16 — feeding daily to-dos not wired yet, by design; see note above.)*
+- [x] **Goals** tab — container hierarchy: long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term goals hold linked to-dos. Progress always derived, never typed in; milestones carry a soft (non-punitive) target month. *(2026-08-16 flat version, retooled into containers 2026-08-17 — see note above and `DESIGN.md` §6.)*
 - [x] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date. *(2026-08-16)*
-- [x] **Pressing issues band** — wired to the to-do source only for now (tasks deferred 3+ times). Must render empty gracefully. *(2026-08-16)*
+- [x] **Pressing issues band** — wired to the to-do source (3+ deferred) and, as of the Goals retool, stalled goals (21+ days no movement). Must render empty gracefully. *(2026-08-16; extended 2026-08-17)*
 - [x] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards. *(2026-08-16 — manual subtasks only; LLM-suggested subtasks are Phase 4+ work.)*
 
 ## Phase 2 — Existing & adjacent tabs
@@ -90,8 +107,10 @@
 - [ ] **Week productivity score** — 0–100 composite + 7-day bars on the cover page. Weights: to-dos 30 / jobs applied 25 / learning 15 / check-in logged 15 / deferral penalty 15. **Excludes sleep, mood, drink, exercise by design.** Shows "collecting — N of 7 days" until a full week exists.
 - [ ] **Yesterday row** on the cover page — one monospace line of the previous day's facts.
 - [ ] **Visualizations**: weekly/monthly rollups, streaks/momentum.
+- [ ] **Goals Roadmap view** (timeline) and **Cascade view** (tree) — the two Goals visualizations stubbed in Phase 1's retool (`goals-tier-roadmap` sub-tab currently a "coming soon" placeholder). Same reflective spirit as the rollups above, specific to the goals hierarchy.
 - [ ] **Weekly synopsis** (~5-min free-write) → LLM analyzes it with the numbers → weekly report.
 - [ ] **Correlation view** (once a few weeks of data exist): auto-spot best/worst weeks and what they had in common.
+- [ ] **Goal-linked vs unattached to-do completions** — now that `todos.goal_id` exists, Performance can distinguish to-dos done in service of a goal from ad-hoc ones. Not wired into any score or view yet.
 
 ## Phase 4 — Learning hub
 *Skill scheduler + content library + knowledge base.*
@@ -100,6 +119,7 @@
 - [ ] **Topic seeding** + LLM daily bites and scheduling. Completing daily learning auto-pulls into Performance.
 - [ ] **File ingestion**: drop in articles/PDFs/links → LLM summary + takeaways → slotted into the daily schedule.
 - [ ] **Quick capture V2** — LLM routing: task → to-dos, URL → content library, fact → notes, "idea:" → Projects. Still never asks a follow-up question. (Optional V3: `t:` `n:` `p:` `l:` prefix overrides.)
+- [ ] **LLM breakdown — shared component**: Goals milestones (drop in a goal, get suggested milestones) and Projects Kanban subtasks (drop in a project, get suggested subtasks) share one breakdown component, built once here since this is the first phase LLM infrastructure exists.
 
 ## Phase 5 — Cover-page intelligence
 *The LLM-generated morning brief.*

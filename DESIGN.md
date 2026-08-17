@@ -186,6 +186,69 @@ The cover page spans phases, so build every data-dependent slot as a **dumb comp
 | Week score | Phase 1 (placeholder slot) | Phase 3 |
 | Check-in banner | Phase 1 (layout) | Phase 3 |
 | Calendar strip | Phase 1 (placeholder events) | Phase 2 (Canvas) |
-| Pressing band | Phase 1 (to-do source only) | Phase 2 (+ Canvas, Career) |
+| Pressing band | Phase 1 (to-do source only) | Phase 2 (+ Canvas, Career) — extended again in Phase 1's Goals retool to include stalled goals |
 | Yesterday row | Phase 3 | Phase 3 |
 | News digest | Phase 1 (placeholder) | Phase 5 |
+
+---
+
+## 6. Goals tab component spec
+
+Goals moved from a flat checklist to a self-referencing container hierarchy (Phase 1 retool). Long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, and short-term goals hold linked to-dos. Everything below follows the same three rules from §1: mono for every numeric (percentages, counts, months, day-counts), sans for titles, 0.5px hairlines, semantic colour only.
+
+### 6.1 List row (default view)
+
+One row per **active** goal in the current tier (Long-term / Mid-term / Short-term sub-tabs, plus a disabled-but-clickable Roadmap stub — see §6.6). A goal that's a milestone under a parent still shows here too, in its own tier's flat list — it isn't hidden just because it's attached; only the parent's expanded detail additionally shows it nested.
+
+Each row: title, a 4px derived progress bar beneath it, and a right-aligned mono block.
+
+- **Progress bar and block, normal state:** bar width = completed direct children ÷ total direct children (or completed ÷ total linked to-dos, for a short-term goal). Block shows `N%` over `N of M`.
+- **No children yet:** bar is empty, block reads `not broken down yet` in muted text — never a fabricated `0%`. Progress is always computed, never a manual field.
+- **Stalled** (no movement in 21 days, status still active): the percentage renders in **amber**, with `stalled Nd` in place of the child count. Amber only — a stalled goal is a warning, not a failure. This is the same "no red" restraint as target months (§6.3): the dashboard flags, it doesn't punish.
+
+A chevron expands the row in place — no modal, no navigation away.
+
+### 6.2 Expanded detail — long-term / mid-term
+
+Shows a **Milestones** section: direct children (one tier down) as blocks in a grid, up to 4 per row, wrapping automatically past that. Below the grid, an inline add-milestone input (text + a month picker for the optional target month).
+
+Zero children: the grid is replaced by a single "break this down" line — the add-milestone input **is** the empty state, not a separate blank panel.
+
+### 6.3 Milestone block
+
+2px coloured left border, **square corners** — the one place in this app a border is single-sided and doesn't get the usual full radius, since a rounded corner on only one side reads as a mistake, not a style. Title + a mono meta line underneath.
+
+| State | Border | Meta line |
+|---|---|---|
+| Done | Green | `done · Jun` (month it was completed) |
+| In progress (has its own children/linked to-dos, some progress) | Blue | `6 of 10 · now` |
+| Not started (active, no progress yet) | Muted | target month if set (`Oct`), else blank |
+| Dropped | Muted + title struck through | same as not-started |
+
+**The target month is never a deadline.** It's a soft signal, informational only:
+- Future or unset: renders plainly (`Oct`) or blank.
+- Past and not done: renders `was Oct` — past tense, neutral, no colour change, no "overdue" language anywhere.
+
+**Why:** a hard deadline that turns red when missed trains you to stop looking at the goal, the same way a guilt-inducing score trains you to stop opening the dashboard (§3.2). Honest information beats manufactured urgency — the missed month is a fact, not a failure state. This is the same design instinct as the yesterday row's "honest, not encouraging, no narrative" rule (§3.9), applied to time instead of behaviour.
+
+### 6.4 Expanded detail — short-term ("This week")
+
+Short-term goals have no goals-tier children — their "children" are linked to-dos. This section reuses the **exact same checkbox-row component** as the cover-page to-do list (§3.8), including the amber 3× defer badge — not a fork, the same rendering function pointed at a filtered list.
+
+Below the rows: a **Pull into this week** button — creates a to-do pre-linked to this goal. When there are no linked to-dos yet, this button is the empty state itself; there's no separate "nothing here" panel to dismiss first.
+
+### 6.5 Footer (all tiers)
+
+One mono meta line, same restraint as the yesterday row: `4 wks ahead · moved 2d ago`, then a small status control (Active / Done / Dropped).
+
+- **Pace** compares completed-milestone count against elapsed share of the span from the goal's creation to its furthest child's target month. Omitted entirely if no target months exist anywhere below it — never guessed.
+- **Status is manual**, deliberately separate from the derived progress bar. Hitting 100% doesn't auto-complete a goal; marking it done or dropped is always a decision, not a side effect.
+- Completing a linked to-do, or changing a goal's status, bumps `last_movement_at` up the whole parent chain — this is what stalled detection (§6.1) reads.
+
+### 6.6 Roadmap tab (stub)
+
+A fourth, visually dimmed sub-tab next to Long-term / Mid-term / Short-term. Still clickable — shows a "coming soon" placeholder, same pattern as the Career/Academics/Performance placeholder panels. The timeline view itself isn't built yet (see `ROADMAP.md`); the slot is deliberately visible so the eventual feature has a home instead of appearing from nowhere.
+
+### 6.7 Empty states
+
+Both the list and the expanded detail must render gracefully with zero data, same standard as the pressing band (§3.6): a tier with no goals shows plain "No goals yet" text, not a broken layout.
