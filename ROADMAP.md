@@ -41,12 +41,24 @@
 > the first Phase 1 feature and the first real (non-placeholder) data table. Schema: `public.todos`
 > (`text`, `completed`, `completed_at`, `defer_count`, `deleted_at` for soft delete, `created_at`),
 > RLS `to authenticated` for select/insert/update (same single-user pattern as `ping` before it — no
-> per-row ownership needed). The old `ping` test table and its cover-page line are gone. Tested with
-> two jsdom suites (55 checks, no browser tool in this environment) — real-browser confirmation from
-> the user still pending. Next: Goals tab, then Projects Kanban.
+> per-row ownership needed). The old `ping` test table and its cover-page line are gone.
+>
+> **Interaction change (user request, 2026-08-16):** checking a to-do off now completes *and* clears
+> it in one motion (pop animation), replacing the earlier separate delete (×) button — there is no
+> longer a way to discard a task without it counting as completed. To-do header simplified from
+> "completed/total" to a plain open-task count as a result.
+>
+> **Goals tab is live too**, same day: `public.goals` with a single `tier` column
+> (`long_term` / `mid_term` / `short_term`) rather than three tables, so a later session can wire
+> short-term goals into daily to-dos without a schema change. Same check-to-clear interaction as
+> to-dos, for consistency. Not yet wired to anything else — that's explicitly future work.
+>
+> Tested with three jsdom suites (76 checks total, no browser tool in this environment) — real-browser
+> confirmation from the user pending for Goals specifically (to-do list already confirmed working live).
+> Next: Projects Kanban.
 
 - [x] **To-do list** on the cover page (add / complete / defer / delete; track defers so a 3+ pushed task flags as "stuck"). *(2026-08-16)*
-- [ ] **Goals** tab — tiered with separate subsections: long-term → mid-term (quarterly/monthly) → short-term (weekly, feeds daily to-dos).
+- [x] **Goals** tab — tiered with separate subsections: long-term → mid-term (quarterly/monthly) → short-term (weekly, feeds daily to-dos). *(2026-08-16 — feeding daily to-dos not wired yet, by design; see note above.)*
 - [x] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date. *(2026-08-16)*
 - [x] **Pressing issues band** — wired to the to-do source only for now (tasks deferred 3+ times). Must render empty gracefully. *(2026-08-16)*
 - [ ] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards.
