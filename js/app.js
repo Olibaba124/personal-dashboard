@@ -199,6 +199,98 @@ async function deferTodo(id) {
   await fetchTodos();
 }
 
+// ============ Goals (Long-term / Mid-term / Short-term) ============
+const GOAL_TIERS = ["long_term", "mid_term", "short_term"];
+let goals = [];
+
+async function fetchGoals() {
+  const { data, error } = await supabaseClient
+    .from("goals")
+    .select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    GOAL_TIERS.forEach((tier) => {
+      document.getElementById(`goals-rows-${tier}`).innerHTML =
+        `<div class="goals-empty">Couldn't load goals — ${escapeHtml(error.message)}</div>`;
+    });
+    return;
+  }
+
+  goals = data;
+  renderGoals();
+}
+
+function renderGoals() {
+  GOAL_TIERS.forEach((tier) => {
+    const rowsEl = document.getElementById(`goals-rows-${tier}`);
+    const tierGoals = goals.filter((g) => g.tier === tier);
+
+    if (tierGoals.length === 0) {
+      rowsEl.innerHTML = `<div class="goals-empty">No goals yet.</div>`;
+      return;
+    }
+
+    rowsEl.innerHTML = tierGoals.map(goalRowHTML).join("");
+
+    rowsEl.querySelectorAll(".goal-checkbox").forEach((el) => {
+      el.addEventListener("change", () => {
+        if (el.checked) completeGoal(Number(el.dataset.id), el);
+      });
+    });
+  });
+}
+
+function goalRowHTML(goal) {
+  return `
+    <div class="goal-row" data-id="${goal.id}">
+      <input type="checkbox" class="goal-checkbox" data-id="${goal.id}" />
+      <span class="goal-text">${escapeHtml(goal.text)}</span>
+    </div>
+  `;
+}
+
+async function addGoal(tier, text) {
+  const { error } = await supabaseClient.from("goals").insert({ tier, text });
+  if (error) {
+    console.error("Failed to add goal:", error.message);
+    return;
+  }
+  await fetchGoals();
+}
+
+function completeGoal(id, checkboxEl) {
+  const row = checkboxEl.closest(".goal-row");
+  row.classList.add("goal-row--popping");
+
+  setTimeout(async () => {
+    const { error } = await supabaseClient
+      .from("goals")
+      .update({ completed: true, completed_at: new Date().toISOString(), deleted_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      console.error("Failed to complete goal:", error.message);
+      return;
+    }
+    await fetchGoals();
+  }, TODO_POP_DURATION_MS);
+}
+
+function initGoalsTab() {
+  document.querySelectorAll(".goals-input").forEach((input) => {
+    input.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+      await addGoal(input.dataset.tier, text);
+      input.focus();
+    });
+  });
+}
+
 // ============ Quick capture (V1: everything typed becomes a to-do) ============
 function initCapture() {
   const captureInput = document.getElementById("capture-input");
@@ -232,6 +324,8 @@ window.initDashboard = function initDashboard() {
   renderGreeting();
   initCapture();
   fetchTodos();
+  initGoalsTab();
+  fetchGoals();
 
   document.getElementById("todo-add-icon").addEventListener("click", () => {
     document.getElementById("capture-input").focus();
