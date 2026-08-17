@@ -63,12 +63,31 @@ function renderGreeting() {
   document.getElementById("greeting-meta").textContent = dateStr;
 }
 
+// ============ Phase 0 wiring check: proves login -> Supabase -> UI works ============
+// Temporary — removed once Phase 1 replaces it with the real to-do list fetch.
+async function testSupabaseConnection() {
+  const el = document.getElementById("supabase-test");
+  if (!el) return;
+
+  const { data, error } = await supabaseClient.from("ping").select("message").limit(1).single();
+
+  if (error) {
+    el.textContent = `SUPABASE · error — ${error.message}`;
+    el.classList.add("supabase-test--error");
+    return;
+  }
+
+  el.textContent = `SUPABASE · ${data.message}`;
+  el.classList.add("supabase-test--ok");
+}
+
 // ============ Entry point — called by auth.js once login succeeds ============
 window.initDashboard = function initDashboard() {
   initTabs(".tab", "tab-panel", "data-tab");
   initTabs(".subtab", "subtab-panel", "data-subtab");
   renderTicker();
   renderGreeting();
+  testSupabaseConnection();
 
   const captureInput = document.getElementById("capture-input");
   if (captureInput) {

@@ -218,6 +218,17 @@ main {
 .bar--good { background: var(--success-fill); }
 .bar--mid { background: var(--warning-text-strong); }
 
+/* ============ Supabase wiring check (Phase 0 only) ============ */
+.supabase-test {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 4px 12px;
+}
+
+.supabase-test--ok { color: var(--success-text); }
+.supabase-test--error { color: var(--danger-text); }
+
 /* ============ Quick capture ============ */
 .capture-bar {
   display: flex;
