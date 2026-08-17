@@ -11,11 +11,15 @@
 ## Phase 0 — Foundation
 *Get the skeleton and the vault standing before any real features.*
 
-> **Session note (2026-08-16):** Repo is live at github.com/Olibaba124/personal-dashboard and Pages
-> is enabled, serving from `main` branch root — https://olibaba124.github.io/personal-dashboard/
-> (first build may take a minute or two to go live; re-check if it 404s immediately). `gh` is now
-> installed and authenticated as `Olibaba124` on this machine, so future sessions can push directly.
-> Next up: Supabase project + login wall (Session 2), then wiring the two layers together (Session 3).
+> **Session note (2026-08-16):** Repo is live at github.com/Olibaba124/personal-dashboard, Pages is
+> enabled at https://olibaba124.github.io/personal-dashboard/, and the Supabase project
+> (`altnaaajgygspiekmhtn`) is created with its GitHub-integration hooked up (inert for now — no
+> `supabase/migrations` folder, and preview branching needs the paid Pro plan the project isn't on).
+> The login wall is built and gated correctly against a mocked Supabase client (17/17 jsdom checks —
+> no browser tool available in this environment), but **not yet tested against the real Supabase project** — that needs the user to (1) disable public
+> sign-ups and (2) create their one user account in the Supabase dashboard, then do a real login in a
+> browser. Next up: finish that real-world test, then Session 3 — wire the two layers together and do
+> the end-to-end security check (view source, confirm no secrets/data leak).
 
 - [x] Create the project folder + GitHub repo, add `.gitignore` (ignore env/secret files). *(folder: `~/Desktop/personal-dashboard`; repo: github.com/Olibaba124/personal-dashboard)*
 - [x] Build the **front-end shell**: cover page + five tab layout (Projects, Personal, Performance, Career, Academics), plain HTML/CSS/JS, no build step. No data yet — just navigable structure. *(2026-08-14)*
@@ -23,6 +27,10 @@
 - [x] Lay out the **cover page slots** with placeholder content (ticker, week score, capture, calendar strip, check-in banner, pressing band, news, to-dos, yesterday row). *(2026-08-14)*
 - [x] **Stock ticker** — scrolling marquee of a hardcoded watchlist, static placeholder numbers for now. *(2026-08-14)*
 - [x] Push to GitHub + enable Pages. *(2026-08-16 — live at https://olibaba124.github.io/personal-dashboard/)*
+- [x] Create the **Supabase** project (database + auth). *(2026-08-16 — project `altnaaajgygspiekmhtn`)*
+- [x] Build the **login wall** (Supabase Auth). Confirm no secrets/passwords exist anywhere in front-end source. *(2026-08-16 — built + jsdom-tested against a mocked client; real-account test still pending, see note above. Confirmed: only the public URL + anon key are in source, no password/secret.)*
+- [ ] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell. *(Login gating works; no real data requests wired yet — that's Session 3/Phase 1.)*
+- [ ] Sanity check the security model end to end (view page source — confirm no data or keys are exposed).
 - [ ] Create the **Supabase** project (database + auth).
 - [ ] Build the **login wall** (Supabase Auth). Confirm no secrets/passwords exist anywhere in front-end source.
 - [ ] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell.
