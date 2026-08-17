@@ -11,15 +11,17 @@
 ## Phase 0 — Foundation
 *Get the skeleton and the vault standing before any real features.*
 
-> **Session note (2026-08-16):** Repo is live at github.com/Olibaba124/personal-dashboard, Pages is
-> enabled at https://olibaba124.github.io/personal-dashboard/, and the Supabase project
-> (`altnaaajgygspiekmhtn`) is created with its GitHub-integration hooked up (inert for now — no
-> `supabase/migrations` folder, and preview branching needs the paid Pro plan the project isn't on).
-> The login wall is built and gated correctly against a mocked Supabase client (17/17 jsdom checks —
-> no browser tool available in this environment), but **not yet tested against the real Supabase project** — that needs the user to (1) disable public
-> sign-ups and (2) create their one user account in the Supabase dashboard, then do a real login in a
-> browser. Next up: finish that real-world test, then Session 3 — wire the two layers together and do
-> the end-to-end security check (view source, confirm no secrets/data leak).
+> **Phase 0 complete (2026-08-16).** Repo: github.com/Olibaba124/personal-dashboard. Live:
+> https://olibaba124.github.io/personal-dashboard/. Supabase project `altnaaajgygspiekmhtn`, GitHub
+> integration connected but inert (no `supabase/migrations` folder; free plan doesn't support preview
+> branching anyway). Public sign-ups disabled, single manually-created account, real login confirmed
+> working end-to-end by the user. Cover page fetches a real row from a throwaway `ping` table
+> (RLS: authenticated-only) after login and renders it — proves the full pipe, not just the auth gate.
+> Source-code security check passed: only the public URL + publishable key ship client-side, no
+> `service_role` key, no password, no real data yet. The `ping` table/UI line is temporary — remove
+> both once Phase 1's real to-do list replaces it. RLS pattern going forward: `to authenticated` is
+> sufficient for every future table (single-user app, no sign-ups) — no per-row ownership column
+> needed. Next: Phase 1, Session 4 — the to-do list + quick capture V1 + pressing band.
 
 - [x] Create the project folder + GitHub repo, add `.gitignore` (ignore env/secret files). *(folder: `~/Desktop/personal-dashboard`; repo: github.com/Olibaba124/personal-dashboard)*
 - [x] Build the **front-end shell**: cover page + five tab layout (Projects, Personal, Performance, Career, Academics), plain HTML/CSS/JS, no build step. No data yet — just navigable structure. *(2026-08-14)*
@@ -29,12 +31,8 @@
 - [x] Push to GitHub + enable Pages. *(2026-08-16 — live at https://olibaba124.github.io/personal-dashboard/)*
 - [x] Create the **Supabase** project (database + auth). *(2026-08-16 — project `altnaaajgygspiekmhtn`)*
 - [x] Build the **login wall** (Supabase Auth). Confirm no secrets/passwords exist anywhere in front-end source. *(2026-08-16 — built + jsdom-tested against a mocked client; real-account test still pending, see note above. Confirmed: only the public URL + anon key are in source, no password/secret.)*
-- [ ] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell. *(Login gating works; no real data requests wired yet — that's Session 3/Phase 1.)*
-- [ ] Sanity check the security model end to end (view page source — confirm no data or keys are exposed).
-- [ ] Create the **Supabase** project (database + auth).
-- [ ] Build the **login wall** (Supabase Auth). Confirm no secrets/passwords exist anywhere in front-end source.
-- [ ] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell.
-- [ ] Sanity check the security model end to end (view page source — confirm no data or keys are exposed).
+- [x] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell. *(2026-08-16 — cover page fetches a real row from a `ping` table, gated by RLS to authenticated users only, and renders it after login. Confirmed live.)*
+- [x] Sanity check the security model end to end (view page source — confirm no data or keys are exposed). *(2026-08-16 — verified: only the public URL + publishable key in source, no `service_role` key, no password value, no real personal data yet.)*
 
 ## Phase 1 — Core self-entered tabs (quick wins → make it usable)
 *Pure type-it-in-yourself data. No external APIs. Gets the dashboard genuinely useful fast.*
