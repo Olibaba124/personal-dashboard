@@ -11,18 +11,18 @@
 ## Phase 0 — Foundation
 *Get the skeleton and the vault standing before any real features.*
 
-> **Session note (2026-08-14):** Skeleton built and committed locally at `~/Desktop/personal-dashboard`
-> (plain HTML/CSS/JS, no build tool — matches the job-tracker stack). Neither `brew` nor `gh` were
-> installed on this machine, so the GitHub repo hasn't been created/pushed yet. Next session: install
-> Homebrew + `gh auth login` (interactive, needs the user's own terminal), then create+push the repo
-> and enable Pages, before moving on to Supabase + the login wall.
+> **Session note (2026-08-16):** Repo is live at github.com/Olibaba124/personal-dashboard and Pages
+> is enabled, serving from `main` branch root — https://olibaba124.github.io/personal-dashboard/
+> (first build may take a minute or two to go live; re-check if it 404s immediately). `gh` is now
+> installed and authenticated as `Olibaba124` on this machine, so future sessions can push directly.
+> Next up: Supabase project + login wall (Session 2), then wiring the two layers together (Session 3).
 
-- [x] Create the project folder + local Git repo, add `.gitignore` (ignore env/secret files). *(2026-08-14 — folder is `~/Desktop/personal-dashboard`; GitHub remote not yet created, see note below.)*
+- [x] Create the project folder + GitHub repo, add `.gitignore` (ignore env/secret files). *(folder: `~/Desktop/personal-dashboard`; repo: github.com/Olibaba124/personal-dashboard)*
 - [x] Build the **front-end shell**: cover page + five tab layout (Projects, Personal, Performance, Career, Academics), plain HTML/CSS/JS, no build step. No data yet — just navigable structure. *(2026-08-14)*
 - [x] Apply the **`DESIGN.md` design system**: dark mode, semantic palette, mono-for-numbers / sans-for-prose. *(2026-08-14)*
 - [x] Lay out the **cover page slots** with placeholder content (ticker, week score, capture, calendar strip, check-in banner, pressing band, news, to-dos, yesterday row). *(2026-08-14)*
 - [x] **Stock ticker** — scrolling marquee of a hardcoded watchlist, static placeholder numbers for now. *(2026-08-14)*
-- [ ] Push the local repo to a **GitHub repo** and enable Pages. *(Blocked on `gh` CLI — see note below.)*
+- [x] Push to GitHub + enable Pages. *(2026-08-16 — live at https://olibaba124.github.io/personal-dashboard/)*
 - [ ] Create the **Supabase** project (database + auth).
 - [ ] Build the **login wall** (Supabase Auth). Confirm no secrets/passwords exist anywhere in front-end source.
 - [ ] **Wire the two layers together:** logging in lets the shell request and receive data from Supabase; a logged-out visitor sees only a login wall / empty shell.
