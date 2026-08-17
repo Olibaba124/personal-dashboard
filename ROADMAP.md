@@ -53,15 +53,25 @@
 > short-term goals into daily to-dos without a schema change. Same check-to-clear interaction as
 > to-dos, for consistency. Not yet wired to anything else — that's explicitly future work.
 >
-> Tested with three jsdom suites (76 checks total, no browser tool in this environment) — real-browser
-> confirmation from the user pending for Goals specifically (to-do list already confirmed working live).
-> Next: Projects Kanban.
+> **Projects tab is live too**, same day: `public.projects` (with a `status` column driving the four
+> Kanban columns) plus `public.project_subtasks` (checklist items inside each card, hard-deleted on
+> removal since Performance never needs to look back on them — everything else in this app
+> soft-deletes). Cards move between columns via a status `<select>`, mirroring how the job tracker's
+> Kanban opens a detail view and changes stage from a dropdown rather than drag-and-drop — checked the
+> job tracker's `docs/app.js` directly before building this, since the plan is to reuse this component
+> when Career migrates the job tracker in Phase 2. Cards expand in place (no modal) to reveal subtasks.
+> LLM-suggested subtasks are explicitly future work, not built yet.
+>
+> **Phase 1 complete.** Tested with four jsdom suites (102 checks total, no browser tool in this
+> environment) — real-browser confirmation from the user pending for Goals and Projects specifically
+> (to-do list already confirmed working live). Next: Phase 2 — migrate the job tracker into Career,
+> add the Academics Canvas integration, and the cover-page calendar strip.
 
 - [x] **To-do list** on the cover page (add / complete / defer / delete; track defers so a 3+ pushed task flags as "stuck"). *(2026-08-16)*
 - [x] **Goals** tab — tiered with separate subsections: long-term → mid-term (quarterly/monthly) → short-term (weekly, feeds daily to-dos). *(2026-08-16 — feeding daily to-dos not wired yet, by design; see note above.)*
 - [x] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date. *(2026-08-16)*
 - [x] **Pressing issues band** — wired to the to-do source only for now (tasks deferred 3+ times). Must render empty gracefully. *(2026-08-16)*
-- [ ] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards.
+- [x] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards. *(2026-08-16 — manual subtasks only; LLM-suggested subtasks are Phase 4+ work.)*
 
 ## Phase 2 — Existing & adjacent tabs
 *Bring in work I already have plus one integration.*
