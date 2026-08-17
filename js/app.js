@@ -291,6 +291,205 @@ function initGoalsTab() {
   });
 }
 
+// ============ Projects (Kanban: Idea -> Started -> In Progress -> Complete) ============
+const KANBAN_STATUSES = ["idea", "started", "in_progress", "complete"];
+const KANBAN_STATUS_LABELS = {
+  idea: "Idea",
+  started: "Started",
+  in_progress: "In Progress",
+  complete: "Complete",
+};
+let projects = [];
+let subtasksByProject = {};
+const expandedProjectIds = new Set();
+
+async function fetchProjects() {
+  const { data: projectsData, error: projectsError } = await supabaseClient
+    .from("projects")
+    .select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (projectsError) {
+    KANBAN_STATUSES.forEach((status) => {
+      document.getElementById(`kanban-col-${status}`).innerHTML =
+        `<p class="placeholder-copy">Couldn't load projects — ${escapeHtml(projectsError.message)}</p>`;
+    });
+    return;
+  }
+
+  const { data: subtasksData, error: subtasksError } = await supabaseClient
+    .from("project_subtasks")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  projects = projectsData;
+  subtasksByProject = {};
+  if (!subtasksError && subtasksData) {
+    subtasksData.forEach((subtask) => {
+      if (!subtasksByProject[subtask.project_id]) subtasksByProject[subtask.project_id] = [];
+      subtasksByProject[subtask.project_id].push(subtask);
+    });
+  }
+
+  renderKanban();
+}
+
+function renderKanban() {
+  KANBAN_STATUSES.forEach((status) => {
+    const colEl = document.getElementById(`kanban-col-${status}`);
+    const colProjects = projects.filter((p) => p.status === status);
+    colEl.innerHTML = colProjects.map(projectCardHTML).join("");
+  });
+
+  document.querySelectorAll(".kanban-card-header").forEach((el) => {
+    el.addEventListener("click", () => toggleCardExpand(Number(el.dataset.id)));
+  });
+  document.querySelectorAll(".kanban-subtask-checkbox").forEach((el) => {
+    el.addEventListener("change", () => toggleSubtask(Number(el.dataset.id), el.checked));
+  });
+  document.querySelectorAll(".kanban-subtask-delete").forEach((el) => {
+    el.addEventListener("click", () => deleteSubtask(Number(el.dataset.id)));
+  });
+  document.querySelectorAll(".kanban-subtask-input").forEach((el) => {
+    el.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const text = el.value.trim();
+      if (!text) return;
+      el.value = "";
+      await addSubtask(Number(el.dataset.projectId), text);
+    });
+  });
+  document.querySelectorAll(".kanban-status-select").forEach((el) => {
+    el.addEventListener("change", () => updateProjectStatus(Number(el.dataset.id), el.value));
+  });
+  document.querySelectorAll(".kanban-card-delete").forEach((el) => {
+    el.addEventListener("click", () => deleteProject(Number(el.dataset.id)));
+  });
+}
+
+function projectCardHTML(project) {
+  const subtasks = subtasksByProject[project.id] || [];
+  const completedCount = subtasks.filter((s) => s.completed).length;
+  const expanded = expandedProjectIds.has(project.id);
+
+  return `
+    <div class="kanban-card ${expanded ? "kanban-card--expanded" : ""}" data-id="${project.id}">
+      <div class="kanban-card-header" data-id="${project.id}">
+        <span class="kanban-card-chevron">›</span>
+        <span class="kanban-card-title">${escapeHtml(project.title)}</span>
+        <span class="kanban-card-subtask-count">${completedCount}/${subtasks.length}</span>
+      </div>
+      <div class="kanban-card-body">
+        <div class="kanban-subtask-rows">
+          ${subtasks.map(subtaskRowHTML).join("")}
+        </div>
+        <input type="text" class="kanban-subtask-input" data-project-id="${project.id}" placeholder="Add a subtask…" />
+        <div class="kanban-card-footer">
+          <select class="kanban-status-select" data-id="${project.id}">
+            ${KANBAN_STATUSES.map(
+              (s) => `<option value="${s}" ${s === project.status ? "selected" : ""}>${KANBAN_STATUS_LABELS[s]}</option>`
+            ).join("")}
+          </select>
+          <button class="kanban-card-delete" data-id="${project.id}" title="Delete project">Delete</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function subtaskRowHTML(subtask) {
+  const rowClass = subtask.completed ? "kanban-subtask-row kanban-subtask-row--completed" : "kanban-subtask-row";
+  return `
+    <div class="${rowClass}">
+      <input type="checkbox" class="kanban-subtask-checkbox" data-id="${subtask.id}" ${subtask.completed ? "checked" : ""} />
+      <span class="kanban-subtask-text">${escapeHtml(subtask.text)}</span>
+      <button class="kanban-subtask-delete" data-id="${subtask.id}" title="Remove">×</button>
+    </div>
+  `;
+}
+
+function toggleCardExpand(id) {
+  if (expandedProjectIds.has(id)) {
+    expandedProjectIds.delete(id);
+  } else {
+    expandedProjectIds.add(id);
+  }
+  renderKanban();
+}
+
+async function addProject(status, title) {
+  const { error } = await supabaseClient.from("projects").insert({ title, status });
+  if (error) {
+    console.error("Failed to add project:", error.message);
+    return;
+  }
+  await fetchProjects();
+}
+
+async function updateProjectStatus(id, status) {
+  const { error } = await supabaseClient.from("projects").update({ status }).eq("id", id);
+  if (error) {
+    console.error("Failed to move project:", error.message);
+    return;
+  }
+  await fetchProjects();
+}
+
+async function deleteProject(id) {
+  const { error } = await supabaseClient
+    .from("projects")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    console.error("Failed to delete project:", error.message);
+    return;
+  }
+  expandedProjectIds.delete(id);
+  await fetchProjects();
+}
+
+async function addSubtask(projectId, text) {
+  const { error } = await supabaseClient.from("project_subtasks").insert({ project_id: projectId, text });
+  if (error) {
+    console.error("Failed to add subtask:", error.message);
+    return;
+  }
+  await fetchProjects();
+}
+
+async function toggleSubtask(id, completed) {
+  const { error } = await supabaseClient.from("project_subtasks").update({ completed }).eq("id", id);
+  if (error) {
+    console.error("Failed to update subtask:", error.message);
+    return;
+  }
+  await fetchProjects();
+}
+
+async function deleteSubtask(id) {
+  const { error } = await supabaseClient.from("project_subtasks").delete().eq("id", id);
+  if (error) {
+    console.error("Failed to delete subtask:", error.message);
+    return;
+  }
+  await fetchProjects();
+}
+
+function initKanbanTab() {
+  document.querySelectorAll(".kanban-input").forEach((input) => {
+    input.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+      await addProject(input.dataset.status, text);
+      input.focus();
+    });
+  });
+}
+
 // ============ Quick capture (V1: everything typed becomes a to-do) ============
 function initCapture() {
   const captureInput = document.getElementById("capture-input");
@@ -326,6 +525,8 @@ window.initDashboard = function initDashboard() {
   fetchTodos();
   initGoalsTab();
   fetchGoals();
+  initKanbanTab();
+  fetchProjects();
 
   document.getElementById("todo-add-icon").addEventListener("click", () => {
     document.getElementById("capture-input").focus();
