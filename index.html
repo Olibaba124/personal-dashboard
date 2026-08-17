@@ -69,9 +69,6 @@
         </div>
       </div>
 
-      <!-- Phase 0 wiring check: temporary, removed once Phase 1 wires real data -->
-      <div class="supabase-test" id="supabase-test">SUPABASE · connecting…</div>
-
       <!-- Quick capture -->
       <div class="capture-bar">
         <input
@@ -118,8 +115,8 @@
 
       <!-- Pressing issues band -->
       <div class="pressing-band pressing-band--empty" id="pressing-band">
-        <div class="pressing-header">Pressing — 0 items</div>
-        <div class="pressing-empty">Nothing pressing.</div>
+        <div class="pressing-header" id="pressing-header">Pressing — 0 items</div>
+        <div id="pressing-items"></div>
       </div>
 
       <!-- News + To-do grid -->
@@ -145,10 +142,10 @@
 
         <div class="todo-list">
           <div class="panel-header">
-            <span>TO-DO · 0/0</span>
-            <button class="add-icon" title="Add">+</button>
+            <span id="todo-count">TO-DO · 0/0</span>
+            <button class="add-icon" id="todo-add-icon" title="Add">+</button>
           </div>
-          <div class="todo-empty">No to-dos yet — type one into capture above.</div>
+          <div id="todo-rows"></div>
         </div>
       </div>
 
