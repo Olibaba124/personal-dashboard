@@ -20,9 +20,6 @@ function initTabs(triggerSelector, panelPrefix, dataAttr) {
   });
 }
 
-initTabs(".tab", "tab-panel", "data-tab");
-initTabs(".subtab", "subtab-panel", "data-subtab");
-
 // ============ Stock ticker (Phase 0: hardcoded watchlist, static numbers) ============
 const WATCHLIST = [
   { symbol: "SPY", price: "641.23", delta: "+0.34%", up: true },
@@ -52,14 +49,6 @@ function tickerItemHTML(item) {
   `;
 }
 
-renderTicker();
-
-// ============ Quick capture (Phase 0: focus only, no wiring yet) ============
-const captureInput = document.getElementById("capture-input");
-if (captureInput) {
-  captureInput.focus();
-}
-
 // ============ Greeting ============
 function renderGreeting() {
   const hour = new Date().getHours();
@@ -74,4 +63,15 @@ function renderGreeting() {
   document.getElementById("greeting-meta").textContent = dateStr;
 }
 
-renderGreeting();
+// ============ Entry point — called by auth.js once login succeeds ============
+window.initDashboard = function initDashboard() {
+  initTabs(".tab", "tab-panel", "data-tab");
+  initTabs(".subtab", "subtab-panel", "data-subtab");
+  renderTicker();
+  renderGreeting();
+
+  const captureInput = document.getElementById("capture-input");
+  if (captureInput) {
+    captureInput.focus();
+  }
+};

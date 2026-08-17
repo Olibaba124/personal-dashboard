@@ -509,6 +509,93 @@ main {
   margin-bottom: 4px;
 }
 
+/* ============ Utility ============ */
+.hidden {
+  display: none !important;
+}
+
+/* ============ Login wall ============ */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 28px;
+}
+
+.login-wordmark {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.login-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.login-card input {
+  background: var(--surface-raised);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+}
+
+.login-card input:focus {
+  border-color: var(--accent-text-strong);
+}
+
+.login-submit {
+  margin-top: 16px;
+  background: var(--accent-text-strong);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-error {
+  color: var(--danger-text);
+  font-size: 12px;
+  min-height: 16px;
+}
+
+/* ============ Logout ============ */
+.logout-button {
+  background: transparent;
+  border: 0.5px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  color: var(--text-primary);
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 720px) {
   .grid-two { grid-template-columns: 1fr; }
