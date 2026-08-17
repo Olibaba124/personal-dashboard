@@ -37,10 +37,18 @@
 ## Phase 1 — Core self-entered tabs (quick wins → make it usable)
 *Pure type-it-in-yourself data. No external APIs. Gets the dashboard genuinely useful fast.*
 
-- [ ] **To-do list** on the cover page (add / complete / defer / delete; track defers so a 3+ pushed task flags as "stuck").
+> **Session note (2026-08-16):** To-do list, quick capture V1, and the pressing band are live —
+> the first Phase 1 feature and the first real (non-placeholder) data table. Schema: `public.todos`
+> (`text`, `completed`, `completed_at`, `defer_count`, `deleted_at` for soft delete, `created_at`),
+> RLS `to authenticated` for select/insert/update (same single-user pattern as `ping` before it — no
+> per-row ownership needed). The old `ping` test table and its cover-page line are gone. Tested with
+> two jsdom suites (55 checks, no browser tool in this environment) — real-browser confirmation from
+> the user still pending. Next: Goals tab, then Projects Kanban.
+
+- [x] **To-do list** on the cover page (add / complete / defer / delete; track defers so a 3+ pushed task flags as "stuck"). *(2026-08-16)*
 - [ ] **Goals** tab — tiered with separate subsections: long-term → mid-term (quarterly/monthly) → short-term (weekly, feeds daily to-dos).
-- [ ] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date.
-- [ ] **Pressing issues band** — wired to the to-do source only for now (tasks deferred 3+ times). Must render empty gracefully.
+- [x] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date. *(2026-08-16)*
+- [x] **Pressing issues band** — wired to the to-do source only for now (tasks deferred 3+ times). Must render empty gracefully. *(2026-08-16)*
 - [ ] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards.
 
 ## Phase 2 — Existing & adjacent tabs
