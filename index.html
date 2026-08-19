@@ -215,6 +215,7 @@
       <div class="project-panel-section">
         <div class="project-panel-section-label">Files</div>
         <div class="project-panel-files" id="project-panel-files"></div>
+        <div class="project-files-error hidden" id="project-files-error"></div>
         <label class="project-panel-upload">
           Upload a file
           <input type="file" id="project-panel-file-input" class="hidden" />
@@ -223,6 +224,19 @@
 
       <div class="project-panel-ask-claude">Ask Claude about this project</div>
     </aside>
+
+    <!-- ============ File preview modal ============ -->
+    <div class="file-preview-scrim" id="file-preview-scrim"></div>
+    <div class="file-preview-modal" id="file-preview-modal">
+      <div class="file-preview-header">
+        <span class="file-preview-title" id="file-preview-title"></span>
+        <div class="file-preview-header-actions">
+          <a class="file-preview-open-link" id="file-preview-open-link" href="#" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+          <button class="file-preview-close" id="file-preview-close" title="Close">×</button>
+        </div>
+      </div>
+      <div class="file-preview-body" id="file-preview-body"></div>
+    </div>
 
     <!-- ============ PERSONAL ============ -->
     <section id="personal" class="tab-panel">

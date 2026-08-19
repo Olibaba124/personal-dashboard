@@ -99,6 +99,25 @@
 > Storage API, and the single-line query-failure banner with no raw Postgres text leaking through.
 > Real-browser confirmation from the user still pending.
 >
+> **Projects follow-up fixes (2026-08-18, same day):** real-browser testing surfaced two issues.
+> First, the native date input let a half-typed year commit as garbage (`07/21/0202`, later found
+> live in the database as `0029-08-21` on a test step and cleared) — replaced entirely with a custom
+> MM/DD/YY picker (three mono selects) so the year range is fully controlled (2026-2035, always two
+> digits, `25` never offered) instead of relying on native browser validation. Second pass on that
+> same picker caught a bug before shipping: saving on every partial pick (month alone, say) meant the
+> very next re-render pulled from the still-null persisted date and wiped the selection, so a date
+> could never actually be built up one field at a time — fixed by only persisting once all three
+> parts are set (or clearing when a previously-dated step loses one). Second, files weren't confirmed
+> working end-to-end (schema/RLS/bucket all checked out, but zero rows existed in `project_files` or
+> `storage.objects`, and upload/delete failures only ever logged to the console) — added a visible
+> inline error line in the Files section, and replaced "click a file to download" with a **preview
+> modal** (images inline, PDFs in an iframe, other types fall back to an "Open in new tab" link),
+> still reached only through a fresh signed URL. jsdom suite grew to 59 checks, including a
+> revert-and-confirm pass on both the mid-selection bug and the year-range regression to make sure
+> they were real fixes and not vacuous assertions. Real-browser confirmation from the user is still
+> the open item — this session could check schema, RLS, and logic, but not click through the actual
+> upload/preview flow in a browser.
+>
 > **Goals retooled into a container hierarchy (2026-08-17)**, replacing the flat three-list version
 > above. Long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term
 > goals hold linked to-dos (`todos.goal_id`, nullable FK). Progress is always derived from

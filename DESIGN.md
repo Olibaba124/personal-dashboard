@@ -289,11 +289,18 @@ drag-and-drop anywhere in this tab, movement is always through the panel):
 - **Stage pills** across the top. Clicking one moves the project and re-renders the board
   immediately — this is the only way a project changes columns.
 - **Notes** — one plain textarea, no title field, no formatting toolbar. Saves on blur, debounced.
-- **Steps** — checkbox + text rows, each with an optional inline target-date field (no modal, and
-  adding a step never blocks on setting one). The meta line above the list (`N of M steps done`)
-  recomputes on every add/check/delete.
-- **Files** — filename + mono size, upload and delete. Downloads always go through a short-lived
-  signed URL against the private Storage bucket, never a public bucket URL.
+- **Steps** — checkbox + text rows, each with an optional inline target date (no modal, and adding
+  a step never blocks on setting one). The date is three small mono selects — MM / DD / YY — not a
+  native date input: it gives full control over the year range (2026-2035, always two digits, never
+  offering an out-of-range or pre-2026 year) and can't commit a garbled value the way a free-typed
+  native date field could. Picking one part at a time doesn't save until all three are set — only a
+  fully-specified date persists, and clearing any one part on an already-dated step clears it. The
+  meta line above the list (`N of M steps done`) recomputes on every add/check/delete.
+- **Files** — filename + mono size, upload and delete. Clicking a file opens a **preview window**
+  (centered modal, own scrim, closes on Escape or the scrim) rather than downloading blind: images
+  render inline, PDFs render in an iframe, anything else falls back to an "Open in new tab" link —
+  all through a fresh short-lived signed URL against the private Storage bucket, never a public
+  bucket URL. An upload or delete failure shows inline in the panel, not just in the console.
 - A disabled **"Ask Claude about this project"** block — Phase 4 wires it up; the slot exists now so
   the layout doesn't shift later.
 

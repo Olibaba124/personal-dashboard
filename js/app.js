@@ -747,6 +747,7 @@ function initKanbanTab() {
 
 function openProjectPanel(id) {
   activeProjectId = id;
+  clearFilesError();
   renderProjectPanel();
   fetchProjectFiles(id);
   document.getElementById("project-panel-scrim").classList.add("project-panel-scrim--open");
@@ -755,6 +756,7 @@ function openProjectPanel(id) {
 
 function closeProjectPanel() {
   activeProjectId = null;
+  closeFilePreview();
   document.getElementById("project-panel-scrim").classList.remove("project-panel-scrim--open");
   document.getElementById("project-panel").classList.remove("project-panel--open");
 }
@@ -827,6 +829,24 @@ async function saveProjectNotes(projectId, notes) {
 
 // ---- Steps ----
 
+// A custom MM/DD/YY picker instead of the native date input — that one let a
+// half-typed year commit as garbage (e.g. "0202") with no way to constrain what
+// its native popup showed. Three plain selects give full control over the year
+// range (2026-2035, two digits, never "25") and the day list is always bounded
+// to the selected month, so an invalid date can't be built in the first place.
+const STEP_DATE_YEAR_START = 2026;
+const STEP_DATE_YEAR_COUNT = 10;
+
+function daysInMonth(month, fullYear) {
+  return new Date(fullYear, month, 0).getDate();
+}
+
+function parseStepTargetDate(targetDate) {
+  if (!targetDate) return { month: "", day: "", year: "" };
+  const [y, m, d] = targetDate.split("-");
+  return { month: m, day: d, year: y.slice(2) };
+}
+
 function renderProjectSteps(projectId) {
   const steps = (stepsByProject[projectId] || [])
     .slice()
@@ -842,18 +862,27 @@ function renderProjectSteps(projectId) {
   rowsEl.querySelectorAll(".step-checkbox").forEach((el) => {
     el.addEventListener("change", () => toggleStep(Number(el.dataset.id), el.checked));
   });
-  rowsEl.querySelectorAll(".step-date-input").forEach((el) => {
+  rowsEl.querySelectorAll(".step-date-part").forEach((el) => {
     el.addEventListener("change", () => {
       const id = Number(el.dataset.id);
-      // A native date input can still commit a partially-typed, out-of-range
-      // year (e.g. "0202") once min/max mark it invalid — refuse to save that
-      // and put the field back to its last real value instead of losing it.
-      if (el.value && !el.checkValidity()) {
+      const groupEl = el.closest(".step-date");
+      const month = groupEl.querySelector(".step-date-month").value;
+      const day = groupEl.querySelector(".step-date-day").value;
+      const year = groupEl.querySelector(".step-date-year").value;
+
+      if (!month || !day || !year) {
+        // Only persist a clear if this step actually had a date already —
+        // otherwise this is just a mid-selection (month picked, day/year not
+        // yet) and saving+re-rendering now would wipe the pick the user just
+        // made, since the row only knows about what's actually been saved.
         const step = steps.find((s) => s.id === id);
-        el.value = (step && step.target_date) || "";
+        if (step && step.target_date) setStepTargetDate(id, null);
         return;
       }
-      setStepTargetDate(id, el.value || null);
+
+      const fullYear = 2000 + Number(year);
+      const clampedDay = Math.min(Number(day), daysInMonth(Number(month), fullYear));
+      setStepTargetDate(id, `${fullYear}-${month}-${String(clampedDay).padStart(2, "0")}`);
     });
   });
   rowsEl.querySelectorAll(".step-delete").forEach((el) => {
@@ -862,18 +891,37 @@ function renderProjectSteps(projectId) {
 }
 
 function stepRowHTML(step) {
+  const { month, day, year } = parseStepTargetDate(step.target_date);
+  const dayCount = month && year ? daysInMonth(Number(month), 2000 + Number(year)) : 31;
+
+  const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"))
+    .map((m) => `<option value="${m}" ${m === month ? "selected" : ""}>${m}</option>`)
+    .join("");
+  const dayOptions = Array.from({ length: dayCount }, (_, i) => String(i + 1).padStart(2, "0"))
+    .map((d) => `<option value="${d}" ${d === day ? "selected" : ""}>${d}</option>`)
+    .join("");
+  const yearOptions = Array.from({ length: STEP_DATE_YEAR_COUNT }, (_, i) => String(STEP_DATE_YEAR_START + i).slice(2))
+    .map((yy) => `<option value="${yy}" ${yy === year ? "selected" : ""}>${yy}</option>`)
+    .join("");
+
   return `
     <div class="step-row ${step.done ? "step-row--done" : ""}">
       <input type="checkbox" class="step-checkbox" data-id="${step.id}" ${step.done ? "checked" : ""} />
       <span class="step-text">${escapeHtml(step.text)}</span>
-      <input
-        type="date"
-        class="step-date-input"
-        data-id="${step.id}"
-        min="2026-01-01"
-        max="2099-12-31"
-        value="${step.target_date || ""}"
-      />
+      <span class="step-date">
+        <select class="step-date-part step-date-month" data-id="${step.id}">
+          <option value="">MM</option>
+          ${monthOptions}
+        </select>
+        <select class="step-date-part step-date-day" data-id="${step.id}">
+          <option value="">DD</option>
+          ${dayOptions}
+        </select>
+        <select class="step-date-part step-date-year" data-id="${step.id}">
+          <option value="">YY</option>
+          ${yearOptions}
+        </select>
+      </span>
       <button class="step-delete" data-id="${step.id}" title="Remove">×</button>
     </div>
   `;
@@ -968,6 +1016,24 @@ function completeProjectStepFromTodo(id, checkboxEl) {
 
 // ---- Files (private bucket, signed URLs only — never a public bucket URL) ----
 
+const PREVIEWABLE_IMAGE_EXT = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"];
+const PREVIEWABLE_PDF_EXT = ["pdf"];
+
+function fileExtension(filename) {
+  const idx = filename.lastIndexOf(".");
+  return idx === -1 ? "" : filename.slice(idx + 1).toLowerCase();
+}
+
+function showFilesError(message) {
+  const el = document.getElementById("project-files-error");
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+
+function clearFilesError() {
+  document.getElementById("project-files-error").classList.add("hidden");
+}
+
 async function fetchProjectFiles(projectId) {
   const { data, error } = await supabaseClient
     .from("project_files")
@@ -976,7 +1042,7 @@ async function fetchProjectFiles(projectId) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Failed to load files:", error.message);
+    showFilesError(`Couldn't load files — ${error.message}`);
     filesByProject[projectId] = [];
   } else {
     filesByProject[projectId] = data;
@@ -995,7 +1061,7 @@ function renderProjectFiles(projectId) {
   }
 
   listEl.querySelectorAll(".file-download").forEach((el) => {
-    el.addEventListener("click", () => downloadFile(el.dataset.path));
+    el.addEventListener("click", () => openFilePreview(el.dataset.path, el.dataset.filename));
   });
   listEl.querySelectorAll(".file-delete").forEach((el) => {
     el.addEventListener("click", () => deleteFile(Number(el.dataset.id), el.dataset.path));
@@ -1012,7 +1078,7 @@ function formatBytes(bytes) {
 function fileRowHTML(file) {
   return `
     <div class="file-row">
-      <button class="file-download" data-path="${escapeHtml(file.storage_path)}">${escapeHtml(file.filename)}</button>
+      <button class="file-download" data-path="${escapeHtml(file.storage_path)}" data-filename="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</button>
       <span class="file-size">${formatBytes(file.size_bytes)}</span>
       <button class="file-delete" data-id="${file.id}" data-path="${escapeHtml(file.storage_path)}" title="Delete">×</button>
     </div>
@@ -1020,36 +1086,80 @@ function fileRowHTML(file) {
 }
 
 async function uploadProjectFile(projectId, file) {
+  clearFilesError();
   const path = `${projectId}/${Date.now()}-${file.name}`;
   const { error: uploadError } = await supabaseClient.storage.from("project-files").upload(path, file);
   if (uploadError) {
-    console.error("Failed to upload file:", uploadError.message);
+    showFilesError(`Couldn't upload "${file.name}" — ${uploadError.message}`);
     return;
   }
   const { error: insertError } = await supabaseClient
     .from("project_files")
     .insert({ project_id: projectId, storage_path: path, filename: file.name, size_bytes: file.size });
   if (insertError) {
-    console.error("Failed to record file:", insertError.message);
+    showFilesError(`Uploaded but couldn't record "${file.name}" — ${insertError.message}`);
     return;
   }
   await fetchProjectFiles(projectId);
 }
 
-async function downloadFile(path) {
-  const { data, error } = await supabaseClient.storage.from("project-files").createSignedUrl(path, 60);
+// ---- Preview modal: images render inline, PDFs render in an iframe, anything
+// else falls back to an "Open in new tab" link — all reached through a fresh
+// signed URL, never a public bucket URL. ----
+
+async function openFilePreview(path, filename) {
+  clearFilesError();
+  const { data, error } = await supabaseClient.storage.from("project-files").createSignedUrl(path, 120);
   if (error) {
-    console.error("Failed to get signed URL:", error.message);
+    showFilesError(`Couldn't open "${filename}" — ${error.message}`);
     return;
   }
-  window.open(data.signedUrl, "_blank");
+  renderFilePreview(filename, data.signedUrl);
+}
+
+function renderFilePreview(filename, url) {
+  const ext = fileExtension(filename);
+  let bodyHTML;
+  if (PREVIEWABLE_IMAGE_EXT.includes(ext)) {
+    bodyHTML = `<img class="file-preview-image" src="${url}" alt="${escapeHtml(filename)}" />`;
+  } else if (PREVIEWABLE_PDF_EXT.includes(ext)) {
+    bodyHTML = `<iframe class="file-preview-frame" src="${url}" title="${escapeHtml(filename)}"></iframe>`;
+  } else {
+    bodyHTML = `
+      <div class="file-preview-fallback">
+        <p>No inline preview for this file type.</p>
+        <a class="file-preview-open-link" href="${url}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(filename)}</a>
+      </div>
+    `;
+  }
+
+  document.getElementById("file-preview-title").textContent = filename;
+  document.getElementById("file-preview-open-link").href = url;
+  document.getElementById("file-preview-body").innerHTML = bodyHTML;
+  document.getElementById("file-preview-scrim").classList.add("file-preview-scrim--open");
+  document.getElementById("file-preview-modal").classList.add("file-preview-modal--open");
+}
+
+function isFilePreviewOpen() {
+  return document.getElementById("file-preview-modal").classList.contains("file-preview-modal--open");
+}
+
+function closeFilePreview() {
+  document.getElementById("file-preview-scrim").classList.remove("file-preview-scrim--open");
+  document.getElementById("file-preview-modal").classList.remove("file-preview-modal--open");
+  document.getElementById("file-preview-body").innerHTML = "";
 }
 
 async function deleteFile(id, path) {
-  await supabaseClient.storage.from("project-files").remove([path]);
+  clearFilesError();
+  const { error: storageError } = await supabaseClient.storage.from("project-files").remove([path]);
+  if (storageError) {
+    showFilesError(`Couldn't delete the file — ${storageError.message}`);
+    return;
+  }
   const { error } = await supabaseClient.from("project_files").delete().eq("id", id);
   if (error) {
-    console.error("Failed to delete file:", error.message);
+    showFilesError(`Couldn't delete the file — ${error.message}`);
     return;
   }
   await fetchProjectFiles(activeProjectId);
@@ -1064,8 +1174,16 @@ function initProjectPanel() {
     }
   });
 
+  document.getElementById("file-preview-scrim").addEventListener("click", closeFilePreview);
+  document.getElementById("file-preview-close").addEventListener("click", closeFilePreview);
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && activeProjectId !== null) closeProjectPanel();
+    if (event.key !== "Escape") return;
+    if (isFilePreviewOpen()) {
+      closeFilePreview();
+    } else if (activeProjectId !== null) {
+      closeProjectPanel();
+    }
   });
 
   const notesEl = document.getElementById("project-panel-notes");
