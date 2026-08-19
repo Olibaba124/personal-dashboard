@@ -66,6 +66,39 @@
 > tool in this environment) — real-browser confirmation from the user pending for Goals and Projects
 > specifically (to-do list already confirmed working live).
 >
+> **Session 6 correction & Projects rebuild (2026-08-18):** the `public.projects` /
+> `public.project_subtasks` schema described above was never actually applied to the database —
+> every column in the live tab was rendering `Could not find the table 'public.projects' in the
+> schema cache`. Rebuilt end-to-end against a revised spec: `public.projects` (`name`, `stage`
+> — `idea`/`brainstorm`/`progress`/`done`, replacing `started` with `brainstorm`, `notes`,
+> `position`), `public.project_steps` (a separate table rather than a JSON column, specifically so a
+> later Performance session can read step completions the same way it reads to-dos — that link is
+> deliberately not wired yet), and `public.project_files` (filename/size, backed by a private
+> Storage bucket, downloads only ever go through short-lived signed URLs, never a public bucket
+> URL). RLS on all three kept the established `to authenticated` pattern with no `user_id` column —
+> confirmed with the user first, since this session's own draft spec called for
+> `user_id = auth.uid()`, which would have diverged from every other table in the app (same kind of
+> spec-vs-codebase conflict as the Goals retool).
+>
+> The board is now Idea → Brainstorm → In Progress → Complete; only Idea has an add input, and
+> projects move forward from a right-side **detail panel** instead of a status dropdown — stage
+> pills (click to move + re-render the board), a single autosaving (on blur, debounced) notes
+> textarea, a step checklist where each step can carry an optional inline target date, a file list
+> with upload/delete through signed URLs, and a disabled "Ask Claude about this project" slot stubbed
+> for Phase 4. Cards are one component with a variant flag rather than two: Idea/Brainstorm render a
+> compact stage-dot pill, In Progress/Complete render the same card plus a thin completion bar
+> (ideas never get a bar — empty reads as failure). A query-level failure shows one line above the
+> board rather than a message per column. Dated steps merge into the cover-page to-do list on read,
+> tagged with their project name, and are never copied into `todos` — checking one off from either
+> place updates the same `project_steps` row.
+>
+> Tested with a new jsdom suite (46 checks): empty-state copy per column, add/move/delete, step
+> add/complete/date-set with the meta line recomputing each time, the to-do-list merge round-trip
+> (appears tagged when dated + open, disappears when done, `todos` table never touched, completing
+> from either surface updates the same row), file upload/list/download/delete against a mocked
+> Storage API, and the single-line query-failure banner with no raw Postgres text leaking through.
+> Real-browser confirmation from the user still pending.
+>
 > **Goals retooled into a container hierarchy (2026-08-17)**, replacing the flat three-list version
 > above. Long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term
 > goals hold linked to-dos (`todos.goal_id`, nullable FK). Progress is always derived from
@@ -88,7 +121,7 @@
 - [x] **Goals** tab — container hierarchy: long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term goals hold linked to-dos. Progress always derived, never typed in; milestones carry a soft (non-punitive) target month. *(2026-08-16 flat version, retooled into containers 2026-08-17 — see note above and `DESIGN.md` §6.)*
 - [x] **Quick capture** (V1) — always-focused input on the cover page; everything typed becomes a to-do. Never prompts for a category or date. *(2026-08-16)*
 - [x] **Pressing issues band** — wired to the to-do source (3+ deferred) and, as of the Goals retool, stalled goals (21+ days no movement). Must render empty gracefully. *(2026-08-16; extended 2026-08-17)*
-- [x] **Projects** tab — Kanban (Idea → Started → In Progress → Complete) with expandable cards. *(2026-08-16 — manual subtasks only; LLM-suggested subtasks are Phase 4+ work.)*
+- [x] **Projects** tab — Kanban (Idea → Brainstorm → In Progress → Complete) with a right-side detail panel (stage pills, autosaving notes, step checklist with optional per-step target dates, file attachments via signed URLs). *(2026-08-16 shipped the UI shell only — the schema was never actually applied. Rebuilt end-to-end 2026-08-18: tables + RLS + private Storage bucket, board, detail panel, files, and the to-do-list merge for dated steps — see Session 6 note above. Manual steps only; LLM-suggested steps are Phase 4+ work.)*
 
 ## Phase 2 — Existing & adjacent tabs
 *Bring in work I already have plus one integration.*

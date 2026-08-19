@@ -122,8 +122,18 @@ Three sub-tabs: **Finance, Goals, Learning.** *(Fitness was removed — it's fol
 - Kept lean (I'm almost done with school). A **calendar view** for assignments and grades, leaning on a **Canvas** integration. No GPA calculators or reading lists for now.
 
 ### Projects tab
-- A **Kanban** board mirroring the job tracker's (reuse that component): **Idea → Started → In Progress → Complete.**
-- Each project card expands into **LLM-suggested subtasks** (drop in "build a trading app" → it breaks out "pull the API," "build the UI," etc., which I track and check off).
+- A **Kanban** board: **Idea → Brainstorm → In Progress → Complete.** Only the Idea column has an add
+  input; new projects always start there and move forward from inside the detail panel via stage
+  pills — no drag-and-drop.
+- Clicking a card opens a right-side **detail panel**: stage pills, a plain autosaving notes
+  textarea, a step checklist (checkbox + text, each step can carry an optional target date), and
+  file attachments (private Supabase Storage bucket, signed URLs only — never a public bucket URL).
+  A disabled "Ask Claude about this project" slot is stubbed for Phase 4.
+- Steps carrying a target date also surface in the cover-page to-do list, tagged with the project
+  name — read as a second source at query time and merged on read, never copied into `todos`.
+  Checking one off in either place updates the same `project_steps` row.
+- **LLM-suggested steps** (drop in "build a trading app" → it breaks out "pull the API," "build the
+  UI," etc.) are Phase 4 work, sharing a breakdown component with Goals milestones.
 
 ---
 

@@ -252,3 +252,53 @@ A fourth, visually dimmed sub-tab next to Long-term / Mid-term / Short-term. Sti
 ### 6.7 Empty states
 
 Both the list and the expanded detail must render gracefully with zero data, same standard as the pressing band (§3.6): a tier with no goals shows plain "No goals yet" text, not a broken layout.
+
+---
+
+## 7. Projects tab component spec
+
+Board order: **Idea → Brainstorm → In Progress → Complete.** Only Idea has an add input; every other
+column is populated by moving a project forward from its detail panel, never by typing directly into
+that column.
+
+### 7.1 Board card — one component, a variant flag
+
+Idea and Brainstorm render a compact pill: a stage-coloured dot, the project name, and a mono meta
+line (`N of M steps` or `no steps`). In Progress and Complete render the identical card plus a thin
+4px completion bar beneath the meta line. This is deliberately one component toggled by a variant
+flag, not a fork — an empty bar on a no-steps idea would read as failure, which is exactly why ideas
+never get one.
+
+Stage colour (dot, bar fill, and the panel's stage pills all share it): grey = idea, blue =
+brainstorm, amber = in progress, green = complete — the same semantic mapping as everywhere else in
+the app (§1).
+
+### 7.2 Empty states
+
+- Idea column, no projects: **"Add your first idea."**
+- Any other column, no projects: **"Nothing here yet."**
+- A query-level failure (e.g. the table itself unreachable) renders **one line above the whole
+  board** — "Couldn't reach your projects. Check your connection and reload." — never a raw
+  Postgres error, and never a message repeated per column.
+
+### 7.3 Detail panel
+
+A right-side panel slides in on click (scrim behind it; Escape or the scrim closes it — no
+drag-and-drop anywhere in this tab, movement is always through the panel):
+
+- **Stage pills** across the top. Clicking one moves the project and re-renders the board
+  immediately — this is the only way a project changes columns.
+- **Notes** — one plain textarea, no title field, no formatting toolbar. Saves on blur, debounced.
+- **Steps** — checkbox + text rows, each with an optional inline target-date field (no modal, and
+  adding a step never blocks on setting one). The meta line above the list (`N of M steps done`)
+  recomputes on every add/check/delete.
+- **Files** — filename + mono size, upload and delete. Downloads always go through a short-lived
+  signed URL against the private Storage bucket, never a public bucket URL.
+- A disabled **"Ask Claude about this project"** block — Phase 4 wires it up; the slot exists now so
+  the layout doesn't shift later.
+
+### 7.4 Dated steps on the cover page
+
+A step with a target date surfaces in the cover-page to-do list (§3.8), tagged with a small muted
+mono project-name pill, and disappears once checked off from either surface — it's the same
+`project_steps` row underneath, merged into the to-do read rather than copied into `todos`.

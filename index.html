@@ -161,37 +161,68 @@
       <div class="panel-header panel-header--tab">
         <span>Projects</span>
       </div>
+      <div class="projects-error hidden" id="projects-error"></div>
       <div class="kanban">
         <div class="kanban-column">
           <div class="kanban-column-header">Idea</div>
           <div class="kanban-add-bar">
-            <input type="text" class="kanban-input" data-status="idea" placeholder="Add a project…" />
+            <input type="text" class="kanban-input" id="project-add-input" placeholder="Add a project…" />
           </div>
           <div class="kanban-card-list" id="kanban-col-idea"></div>
         </div>
         <div class="kanban-column">
-          <div class="kanban-column-header">Started</div>
-          <div class="kanban-add-bar">
-            <input type="text" class="kanban-input" data-status="started" placeholder="Add a project…" />
-          </div>
-          <div class="kanban-card-list" id="kanban-col-started"></div>
+          <div class="kanban-column-header">Brainstorm</div>
+          <div class="kanban-card-list" id="kanban-col-brainstorm"></div>
         </div>
         <div class="kanban-column">
           <div class="kanban-column-header">In Progress</div>
-          <div class="kanban-add-bar">
-            <input type="text" class="kanban-input" data-status="in_progress" placeholder="Add a project…" />
-          </div>
-          <div class="kanban-card-list" id="kanban-col-in_progress"></div>
+          <div class="kanban-card-list" id="kanban-col-progress"></div>
         </div>
         <div class="kanban-column">
           <div class="kanban-column-header">Complete</div>
-          <div class="kanban-add-bar">
-            <input type="text" class="kanban-input" data-status="complete" placeholder="Add a project…" />
-          </div>
-          <div class="kanban-card-list" id="kanban-col-complete"></div>
+          <div class="kanban-card-list" id="kanban-col-done"></div>
         </div>
       </div>
     </section>
+
+    <!-- ============ Project detail panel ============ -->
+    <div class="project-panel-scrim" id="project-panel-scrim"></div>
+    <aside class="project-panel" id="project-panel">
+      <div class="project-panel-header">
+        <span class="project-panel-title" id="project-panel-title"></span>
+        <div class="project-panel-header-actions">
+          <button class="project-panel-delete" id="project-panel-delete" title="Delete project">Delete</button>
+          <button class="project-panel-close" id="project-panel-close" title="Close">×</button>
+        </div>
+      </div>
+
+      <div class="project-panel-stages" id="project-panel-stages"></div>
+
+      <div class="project-panel-section">
+        <div class="project-panel-section-label">Notes</div>
+        <textarea class="project-panel-notes" id="project-panel-notes" placeholder="Notes…"></textarea>
+      </div>
+
+      <div class="project-panel-section">
+        <div class="project-panel-section-header">
+          <span class="project-panel-section-label">Steps</span>
+          <span class="project-panel-meta" id="project-panel-meta">No steps yet</span>
+        </div>
+        <div class="project-panel-steps" id="project-panel-steps"></div>
+        <input type="text" class="project-panel-step-input" id="project-panel-step-input" placeholder="Add a step…" />
+      </div>
+
+      <div class="project-panel-section">
+        <div class="project-panel-section-label">Files</div>
+        <div class="project-panel-files" id="project-panel-files"></div>
+        <label class="project-panel-upload">
+          Upload a file
+          <input type="file" id="project-panel-file-input" class="hidden" />
+        </label>
+      </div>
+
+      <div class="project-panel-ask-claude">Ask Claude about this project</div>
+    </aside>
 
     <!-- ============ PERSONAL ============ -->
     <section id="personal" class="tab-panel">
