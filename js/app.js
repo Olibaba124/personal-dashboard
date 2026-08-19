@@ -843,7 +843,18 @@ function renderProjectSteps(projectId) {
     el.addEventListener("change", () => toggleStep(Number(el.dataset.id), el.checked));
   });
   rowsEl.querySelectorAll(".step-date-input").forEach((el) => {
-    el.addEventListener("change", () => setStepTargetDate(Number(el.dataset.id), el.value || null));
+    el.addEventListener("change", () => {
+      const id = Number(el.dataset.id);
+      // A native date input can still commit a partially-typed, out-of-range
+      // year (e.g. "0202") once min/max mark it invalid — refuse to save that
+      // and put the field back to its last real value instead of losing it.
+      if (el.value && !el.checkValidity()) {
+        const step = steps.find((s) => s.id === id);
+        el.value = (step && step.target_date) || "";
+        return;
+      }
+      setStepTargetDate(id, el.value || null);
+    });
   });
   rowsEl.querySelectorAll(".step-delete").forEach((el) => {
     el.addEventListener("click", () => deleteStep(Number(el.dataset.id)));
@@ -855,7 +866,14 @@ function stepRowHTML(step) {
     <div class="step-row ${step.done ? "step-row--done" : ""}">
       <input type="checkbox" class="step-checkbox" data-id="${step.id}" ${step.done ? "checked" : ""} />
       <span class="step-text">${escapeHtml(step.text)}</span>
-      <input type="date" class="step-date-input" data-id="${step.id}" value="${step.target_date || ""}" />
+      <input
+        type="date"
+        class="step-date-input"
+        data-id="${step.id}"
+        min="2026-01-01"
+        max="2099-12-31"
+        value="${step.target_date || ""}"
+      />
       <button class="step-delete" data-id="${step.id}" title="Remove">×</button>
     </div>
   `;
