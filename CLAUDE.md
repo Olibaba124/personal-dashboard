@@ -123,8 +123,8 @@ Three sub-tabs: **Finance, Goals, Learning.** *(Fitness was removed — it's fol
 
 ### Projects tab
 - A **Kanban** board: **Idea → Brainstorm → In Progress → Complete.** Only the Idea column has an add
-  input; new projects always start there and move forward from inside the detail panel via stage
-  pills — no drag-and-drop.
+  input; new projects always start there. Cards move between stages either by dragging them to
+  another column or via the stage pills inside the detail panel — both call the same move logic.
 - Clicking a card opens a right-side **detail panel**: stage pills, a plain autosaving notes
   textarea, a step checklist (checkbox + text, each step can carry an optional target date), and
   file attachments (private Supabase Storage bucket, signed URLs only — never a public bucket URL).

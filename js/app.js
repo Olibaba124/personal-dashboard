@@ -689,6 +689,17 @@ function renderKanban() {
 
   document.querySelectorAll(".project-card").forEach((el) => {
     el.addEventListener("click", () => openProjectPanel(Number(el.dataset.id)));
+    // Cards are recreated on every render, so drag listeners are (re-)bound
+    // here; the column drop targets themselves are stable and wired once in
+    // initKanbanTab() instead.
+    el.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData("text/plain", el.dataset.id);
+      event.dataTransfer.effectAllowed = "move";
+      el.classList.add("project-card--dragging");
+    });
+    el.addEventListener("dragend", () => {
+      el.classList.remove("project-card--dragging");
+    });
   });
 }
 
@@ -703,7 +714,7 @@ function projectCardHTML(project) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return `
-    <div class="project-card ${showProgress ? "project-card--with-progress" : ""}" data-id="${project.id}">
+    <div class="project-card ${showProgress ? "project-card--with-progress" : ""}" data-id="${project.id}" draggable="true">
       <div class="project-card-top">
         <span class="project-card-dot project-card-dot--${project.stage}"></span>
         <span class="project-card-name">${escapeHtml(project.name)}</span>
@@ -731,15 +742,41 @@ async function addProject(name) {
 
 function initKanbanTab() {
   const input = document.getElementById("project-add-input");
-  if (!input) return;
-  input.addEventListener("keydown", async (event) => {
-    if (event.key !== "Enter") return;
-    const text = input.value.trim();
-    if (!text) return;
+  if (input) {
+    input.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      const text = input.value.trim();
+      if (!text) return;
 
-    input.value = "";
-    await addProject(text);
-    input.focus();
+      input.value = "";
+      await addProject(text);
+      input.focus();
+    });
+  }
+
+  // Column drop targets — cards move between stages either by dragging here
+  // or via the stage pills in the detail panel; both call moveProjectStage()
+  // so there's one source of truth for what "moving a project" does. These
+  // column elements are stable across renders (only their contents get
+  // rewritten), so they're wired once here rather than on every renderKanban().
+  PROJECT_STAGES.forEach((stage) => {
+    const colEl = document.getElementById(`kanban-col-${stage}`);
+    colEl.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      colEl.classList.add("kanban-card-list--drag-over");
+    });
+    colEl.addEventListener("dragleave", (event) => {
+      if (!colEl.contains(event.relatedTarget)) colEl.classList.remove("kanban-card-list--drag-over");
+    });
+    colEl.addEventListener("drop", (event) => {
+      event.preventDefault();
+      colEl.classList.remove("kanban-card-list--drag-over");
+      const id = Number(event.dataTransfer.getData("text/plain"));
+      const project = projects.find((p) => p.id === id);
+      if (!project || project.stage === stage) return;
+      moveProjectStage(id, stage);
+    });
   });
 }
 

@@ -283,11 +283,11 @@ the app (§1).
 
 ### 7.3 Detail panel
 
-A right-side panel slides in on click (scrim behind it; Escape or the scrim closes it — no
-drag-and-drop anywhere in this tab, movement is always through the panel):
+A right-side panel slides in on click (scrim behind it; Escape or the scrim closes it):
 
 - **Stage pills** across the top. Clicking one moves the project and re-renders the board
-  immediately — this is the only way a project changes columns.
+  immediately. This is one of two ways a project changes columns — the other is dragging its card
+  to a different column on the board itself (§7.5); both call the same move logic underneath.
 - **Notes** — one plain textarea, no title field, no formatting toolbar. Saves on blur, debounced.
 - **Steps** — checkbox + text rows, each with an optional inline target date (no modal, and adding
   a step never blocks on setting one). The date is three small mono selects — MM / DD / YY — not a
@@ -309,3 +309,13 @@ drag-and-drop anywhere in this tab, movement is always through the panel):
 A step with a target date surfaces in the cover-page to-do list (§3.8), tagged with a small muted
 mono project-name pill, and disappears once checked off from either surface — it's the same
 `project_steps` row underneath, merged into the to-do read rather than copied into `todos`.
+
+### 7.5 Drag-and-drop between columns
+
+Cards are natively draggable. Dragging one over a column highlights it (a dashed accent-coloured
+outline, inset from the column's edge); dropping moves the project to that column's stage and
+re-renders the board — the exact same move as clicking a stage pill in the detail panel (§7.3), so
+there is one source of truth for what "moving a project" does, not two parallel code paths. Dropping
+a card back into the column it's already in is a no-op — no wasted write, no flicker. The dragged
+card itself dims (40% opacity) while the drag is in progress, standard drag affordance, nothing
+fancier.

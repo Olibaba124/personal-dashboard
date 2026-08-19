@@ -118,6 +118,14 @@
 > the open item — this session could check schema, RLS, and logic, but not click through the actual
 > upload/preview flow in a browser.
 >
+> **Drag-and-drop added (2026-08-18, same day):** user request explicitly reversed the earlier "no
+> drag-and-drop, movement only through the panel" decision. Cards are now natively draggable between
+> columns; dropping calls the same `moveProjectStage()` the stage pills already used, so there's one
+> move path, not two. Dropping into the card's current column is a no-op. jsdom has no
+> DragEvent/DataTransfer implementation, so drag was tested by shimming a fake `dataTransfer` object
+> onto a plain `Event` before dispatch — suite grew to 67 checks, drag coverage included in the
+> revert-and-confirm pass.
+>
 > **Goals retooled into a container hierarchy (2026-08-17)**, replacing the flat three-list version
 > above. Long-term goals hold mid-term milestones, mid-term milestones hold short-term ones, short-term
 > goals hold linked to-dos (`todos.goal_id`, nullable FK). Progress is always derived from

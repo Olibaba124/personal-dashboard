@@ -584,6 +584,23 @@ main {
   border-color: var(--accent-text-strong);
 }
 
+.project-card--dragging {
+  opacity: 0.4;
+}
+
+.kanban-card-list {
+  min-height: 28px;
+  border-radius: 8px;
+  transition: background 120ms ease, outline-color 120ms ease;
+  outline: 1px dashed transparent;
+  outline-offset: -4px;
+}
+
+.kanban-card-list--drag-over {
+  background: var(--surface);
+  outline-color: var(--accent-text-strong);
+}
+
 .project-card-top {
   display: flex;
   align-items: center;
