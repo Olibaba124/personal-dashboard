@@ -1,0 +1,22 @@
+{
+  "keywords": ["real estate analyst", "acquisitions analyst", "investment analyst real estate"],
+  "locations": [
+    "San Francisco, CA",
+    "South San Francisco, CA",
+    "San Mateo, CA",
+    "Redwood City, CA",
+    "Palo Alto, CA",
+    "Mountain View, CA",
+    "Sunnyvale, CA",
+    "Santa Clara, CA",
+    "San Jose, CA"
+  ],
+  "remote_ok": true,
+  "salary_min": 90000,
+  "max_results_per_run": 50,
+  "exclude_keywords": ["unpaid"],
+  "title_exclude_keywords": [
+    "accountant", "accounting", "tax", "leasing",
+    "tenant rep", "tenant representation", "lease administration"
+  ]
+}

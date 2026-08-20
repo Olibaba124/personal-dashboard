@@ -160,7 +160,8 @@ function renderPressingBand() {
 
   const stuckTodos = todos.filter((t) => t.deleted_at === null && t.defer_count >= DEFER_STUCK_THRESHOLD);
   const stalledGoals = typeof goals !== "undefined" ? goals.filter(isStalled) : [];
-  const total = stuckTodos.length + stalledGoals.length;
+  const coldContacts = typeof careerContacts !== "undefined" ? careerContacts.filter(isColdContact) : [];
+  const total = stuckTodos.length + stalledGoals.length + coldContacts.length;
 
   header.textContent = `Pressing — ${total} item${total === 1 ? "" : "s"}`;
 
@@ -189,7 +190,16 @@ function renderPressingBand() {
     `
   );
 
-  items.innerHTML = todoRows.concat(goalRows).join("");
+  const contactRows = coldContacts.map(
+    (c) => `
+      <div class="pressing-row">
+        <span>${escapeHtml(c.name)}</span>
+        <span class="pressing-row-reason">cold ${daysSinceCalled(c)}d</span>
+      </div>
+    `
+  );
+
+  items.innerHTML = todoRows.concat(goalRows).concat(contactRows).join("");
 }
 
 async function addTodo(text) {
@@ -1278,6 +1288,7 @@ window.initDashboard = function initDashboard() {
   initTabs(".tab", "tab-panel", "data-tab");
   initTabs(".subtab", "subtab-panel", "data-subtab");
   initTabs(".goals-subtab", "goals-subtab-panel", "data-goals-subtab");
+  initTabs(".career-subtab", "career-subtab-panel", "data-career-subtab");
   renderTicker();
   renderGreeting();
   initCapture();
@@ -1288,6 +1299,11 @@ window.initDashboard = function initDashboard() {
   initProjectPanel();
   fetchProjects();
   fetchDatedProjectSteps();
+  if (typeof initCareerTab === "function") {
+    initCareerTab();
+    fetchCareerJobs();
+    fetchCareerContacts();
+  }
 
   document.getElementById("todo-add-icon").addEventListener("click", () => {
     document.getElementById("capture-input").focus();

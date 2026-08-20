@@ -305,8 +305,184 @@
       <div class="panel-header panel-header--tab">
         <span>Career</span>
       </div>
-      <p class="placeholder-copy">Job tracker (Kanban) + networking module migrate in here in Phase 2.</p>
+
+      <input type="text" class="career-search" id="career-search" placeholder="Search jobs and contacts…" />
+
+      <nav class="subtabs" role="tablist">
+        <button class="career-subtab active" data-career-subtab="career-review" role="tab" aria-selected="true">Review</button>
+        <button class="career-subtab" data-career-subtab="career-shortlist" role="tab" aria-selected="false">Shortlist</button>
+        <button class="career-subtab" data-career-subtab="career-pipeline" role="tab" aria-selected="false">Pipeline</button>
+        <button class="career-subtab" data-career-subtab="career-networking" role="tab" aria-selected="false">Networking</button>
+      </nav>
+
+      <div class="projects-error hidden" id="career-jobs-error"></div>
+
+      <div id="career-review" class="career-subtab-panel active">
+        <div class="career-card-feed" id="career-review-feed"></div>
+        <p class="career-empty hidden" id="career-review-empty">Nothing to review right now.</p>
+      </div>
+
+      <div id="career-shortlist" class="career-subtab-panel">
+        <div class="career-card-feed" id="career-shortlist-feed"></div>
+        <p class="career-empty hidden" id="career-shortlist-empty">Nothing shortlisted yet.</p>
+      </div>
+
+      <div id="career-pipeline" class="career-subtab-panel">
+        <div class="kanban">
+          <div class="kanban-column">
+            <div class="kanban-column-header career-kanban-header">
+              <span>Applied</span>
+              <button class="career-kanban-add-btn" id="career-add-applied-btn" type="button" title="Log an applied job">+</button>
+            </div>
+            <div class="kanban-card-list" id="career-col-applied"></div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">Heard back</div>
+            <div class="kanban-card-list" id="career-col-heard_back"></div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">Interviewing</div>
+            <div class="kanban-card-list" id="career-col-interviewing"></div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">Offer</div>
+            <div class="kanban-card-list" id="career-col-offer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="career-networking" class="career-subtab-panel">
+        <div class="career-networking-toolbar">
+          <button class="career-kanban-add-btn career-kanban-add-btn--labeled" id="career-add-contact-btn" type="button">+ Add contact</button>
+        </div>
+        <div class="career-card-feed" id="career-contacts-feed"></div>
+        <p class="career-empty hidden" id="career-contacts-empty">No contacts yet — add the first person you networked with.</p>
+      </div>
     </section>
+
+    <!-- ============ Career job detail panel ============ -->
+    <div class="project-panel-scrim" id="career-job-panel-scrim"></div>
+    <aside class="project-panel" id="career-job-panel">
+      <div class="project-panel-header">
+        <span class="project-panel-title" id="career-job-panel-title"></span>
+        <div class="project-panel-header-actions">
+          <button class="project-panel-delete" id="career-job-panel-delete" title="Delete job">Delete</button>
+          <button class="project-panel-close" id="career-job-panel-close" title="Close">×</button>
+        </div>
+      </div>
+
+      <div class="career-job-panel-meta" id="career-job-panel-meta"></div>
+      <a class="career-job-panel-link" id="career-job-panel-link" href="#" target="_blank" rel="noopener noreferrer">View original posting →</a>
+
+      <div class="project-panel-stages hidden" id="career-job-panel-stages"></div>
+
+      <p class="career-job-panel-summary hidden" id="career-job-panel-summary"></p>
+
+      <div class="career-job-panel-materials hidden" id="career-job-panel-materials"></div>
+
+      <div class="project-panel-section hidden" id="career-job-panel-notes-section">
+        <div class="project-panel-section-label">Notes</div>
+        <div class="career-notes-list" id="career-job-panel-notes-list"></div>
+        <div class="career-notes-add-row">
+          <input type="text" class="project-panel-step-input" id="career-job-panel-notes-input" placeholder="Add a note…" />
+          <button class="career-notes-add-btn" id="career-job-panel-notes-add" type="button">Add</button>
+        </div>
+      </div>
+
+      <div class="project-panel-section" id="career-job-panel-desc-section">
+        <div class="project-panel-section-label">Description</div>
+        <p class="career-job-panel-desc" id="career-job-panel-desc"></p>
+      </div>
+
+      <div class="career-job-panel-actions" id="career-job-panel-actions"></div>
+    </aside>
+
+    <!-- ============ Career contact detail panel ============ -->
+    <div class="project-panel-scrim" id="career-contact-panel-scrim"></div>
+    <aside class="project-panel" id="career-contact-panel">
+      <div class="project-panel-header">
+        <span class="project-panel-title" id="career-contact-panel-title"></span>
+        <div class="project-panel-header-actions">
+          <button class="project-panel-delete" id="career-contact-panel-delete" title="Delete contact">Delete</button>
+          <button class="project-panel-close" id="career-contact-panel-close" title="Close">×</button>
+        </div>
+      </div>
+
+      <button class="career-referred-by hidden" id="career-contact-panel-referred-by" type="button"></button>
+
+      <div class="career-contact-fields">
+        <label class="career-field-label">Name
+          <input type="text" class="career-field-input" id="career-contact-panel-name" />
+        </label>
+        <label class="career-field-label">Company
+          <input type="text" class="career-field-input" id="career-contact-panel-company" />
+        </label>
+        <label class="career-field-label">Called on
+          <input type="date" class="career-field-input" id="career-contact-panel-called-on" />
+        </label>
+      </div>
+
+      <div class="project-panel-section">
+        <div class="project-panel-section-label">Notes</div>
+        <div class="career-notes-list" id="career-contact-panel-notes-list"></div>
+        <div class="career-notes-add-row">
+          <input type="text" class="project-panel-step-input" id="career-contact-panel-notes-input" placeholder="Add a note…" />
+          <button class="career-notes-add-btn" id="career-contact-panel-notes-add" type="button">Add</button>
+        </div>
+      </div>
+
+      <div class="project-panel-section">
+        <div class="project-panel-section-label">Referrals</div>
+        <div class="career-referral-list" id="career-referral-list"></div>
+        <div class="career-referral-add-row">
+          <input type="text" class="career-field-input" id="career-referral-name-input" placeholder="Name" />
+          <input type="text" class="career-field-input" id="career-referral-company-input" placeholder="Company (optional)" />
+          <input type="date" class="career-field-input" id="career-referral-called-on-input" />
+          <button class="career-notes-add-btn" id="career-referral-add-btn" type="button">Add referral</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ Career modals (add applied job / add contact) ============ -->
+    <div class="career-modal-scrim hidden" id="career-modal-scrim"></div>
+
+    <div class="career-modal hidden" id="career-add-applied-modal">
+      <div class="career-modal-title">Log an applied job</div>
+      <p class="career-modal-hint">For applications the scanner never surfaced.</p>
+      <label class="career-field-label">Title
+        <input type="text" class="career-field-input" id="career-add-applied-title" placeholder="e.g. Acquisitions Analyst" />
+      </label>
+      <label class="career-field-label">Company
+        <input type="text" class="career-field-input" id="career-add-applied-company" placeholder="e.g. Acme Capital" />
+      </label>
+      <label class="career-field-label">Link / posting URL
+        <input type="text" class="career-field-input" id="career-add-applied-url" placeholder="https://…" />
+      </label>
+      <label class="career-field-label">First note
+        <textarea class="career-field-input career-field-textarea" id="career-add-applied-note" rows="3" placeholder="Optional…"></textarea>
+      </label>
+      <div class="career-modal-actions">
+        <button class="career-notes-add-btn" id="career-add-applied-save" type="button" disabled>Add</button>
+        <button class="career-modal-cancel" id="career-add-applied-cancel" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div class="career-modal hidden" id="career-add-contact-modal">
+      <div class="career-modal-title">Add contact</div>
+      <label class="career-field-label">Name
+        <input type="text" class="career-field-input" id="career-add-contact-name" placeholder="e.g. Jane Doe" />
+      </label>
+      <label class="career-field-label">Company
+        <input type="text" class="career-field-input" id="career-add-contact-company" placeholder="Optional" />
+      </label>
+      <label class="career-field-label">Called on
+        <input type="date" class="career-field-input" id="career-add-contact-called-on" />
+      </label>
+      <div class="career-modal-actions">
+        <button class="career-notes-add-btn" id="career-add-contact-save" type="button" disabled>Add</button>
+        <button class="career-modal-cancel" id="career-add-contact-cancel" type="button">Cancel</button>
+      </div>
+    </div>
 
     <!-- ============ ACADEMICS ============ -->
     <section id="academics" class="tab-panel">
@@ -323,6 +499,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/career.js"></script>
   <script src="js/auth.js"></script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+{
+  "enabled": ["adzuna", "greenhouse", "googlejobs"],
+  "priority": ["manual", "greenhouse", "lever", "ashby", "adzuna", "googlejobs", "theirstack"],
+  "greenhouse_tokens": ["stripe"],
+  "google_jobs": { "queries": [], "locations": [] },
+  "theirstack": { "posted_within_days": 14, "limit_per_query": 25 }
+}
